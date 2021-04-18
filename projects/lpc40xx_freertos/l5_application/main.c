@@ -7,6 +7,7 @@
 #include "common_macros.h"
 #include "periodic_scheduler.h"
 #include "sj2_cli.h"
+<<<<<<< Updated upstream
 
 // 'static' to make these functions 'private' to this file
 static void create_blinky_tasks(void);
@@ -129,3 +130,54 @@ static void uart_task(void *params) {
     printf(" %lu ticks\n\n", (xTaskGetTickCount() - ticks));
   }
 }
+=======
+#include "gpio_lab.h"
+#include "LPC40xx.h"
+#include "semphr.h"
+
+
+typedef char songname_t[16];
+void mp3_reader_task(void *p);
+void mp3_player_task(void *p);
+QueueHandle_t Q_songname;
+QueueHandle_t Q_songdata;
+
+void main(void) {
+  Q_songname = xQueueCreate(1, sizeof(songname));
+  Q_songdata = xQueueCreate(1, 512);
+}
+
+// Reader tasks receives song-name over Q_songname to start reading it
+void mp3_reader_task(void *p) {
+  songname name;
+  char bytes_512[512];
+ 
+  while(1) {
+    xQueueReceive(Q_songname, &name[0], portMAX_DELAY);
+    printf("Received song to play: %s\n", name);
+    
+    open_file();
+    while (!file.end()) {
+      read_from_file(bytes_512);
+      xQueueSend(Q_songdata, &bytes_512[0], portMAX_DELAY);
+    }
+    close_file();
+  }
+}
+
+// Player task receives song data over Q_songdata to send it to the MP3 decoder
+void mp3_player_task(void *p) {
+  char bytes_512[512];
+  
+  while (1) {
+    xQueueReceive(Q_songdata,  &bytes_512[0], portMAX_DELAY);
+    for (int i = 0; i < sizeof(bytes_512); i++) {
+      while (!mp3_decoder_needs_data()) {
+        vTaskDelay(1);
+      }
+      
+      spi_send_to_mp3_decoder(bytes_512[i]);
+    }
+  }
+}
+>>>>>>> Stashed changes

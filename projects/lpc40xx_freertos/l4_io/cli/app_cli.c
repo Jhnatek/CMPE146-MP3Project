@@ -15,6 +15,13 @@
 
 #include "app_cli.h"
 
+#include "semphr.h"
+
+// CLI needs access to the QueueHandle_t where you can queue the song name
+// One way to do this is to declare 'QueueHandle_t' in main() that is NOT static
+// and then extern it here
+extern QueueHandle_t Q_songname;
+
 /*******************************************************************************
  *
  *               P R I V A T E    D A T A    D E F I N I T I O N S
@@ -194,4 +201,16 @@ void app_cli__process_input(app_cli_s *cli, app_cli__argument_t cli_argument, sl
   if (NULL != cli->terminal_string) {
     cli->output_function(cli_argument, cli->terminal_string);
   }
+}
+
+
+app_cli_status_e cli__mp3_play(app_cli__argument_t argument,
+                               sl_string_t user_input_minus_command_name,
+                               app_cli__print_string_function cli_output) {
+  // user_input_minus_command_name is actually a 'char *' pointer type
+  // We tell the Queue to copy 32 bytes of songname from this location
+  xQueueSend(Q_songname, user_input_minus_command_name, portMAX_DELAY);
+  
+  printf("Sent %s over to the Q_songname\n", user_input_minus_command_name);
+  return APP_CLI_STATUS__SUCCESS;
 }
