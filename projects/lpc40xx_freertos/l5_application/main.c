@@ -18,8 +18,13 @@ QueueHandle_t Q_songname;
 QueueHandle_t Q_songdata;
 
 void main(void) {
+  sj2_cli__init();
+  xTaskCreate(mp3_reader_task, "mp3_reader_task", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
+  xTaskCreate(mp3_player_task, "mp3_player_task", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   Q_songname = xQueueCreate(1, sizeof(songname));
   Q_songdata = xQueueCreate(1, 512);
+
+  vTaskStartScheduler();
 }
 
 // Reader tasks receives song-name over Q_songname to start reading it
