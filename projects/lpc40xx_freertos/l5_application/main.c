@@ -8,6 +8,37 @@
 #include "periodic_scheduler.h"
 #include "sj2_cli.h"
 
+
+-----------READ----------------
+
+void file_opener(void *p) {
+  songname_t song;
+  char bytes_512[512];
+  UINT byte_reader = 0;
+  while (true) {
+    if (xQueueReceive(Q_song, &song[0], portMAX_DELAY)) {
+      printf("ABOUT TO PLAY: %s!!\n", song);
+      FRESULT file = f_open(&song_file, &name[0], FA_READ);
+      if (FR_OK == file) {
+        while (!f_eof(&file) {
+          if (FR_OK == f_read(&song_file, bytes_512, 512, &byte_reader)) {
+            printf("\n READING SONG!! \n");
+            xQueueSend(Q_song, &bytes_512[0], portMAX_DELAY);
+            vTaskDelay(100);
+          } else {
+            printf("ERROR: FAILED TO PLAY!!\n");
+          }
+        }
+      } else {
+        printf("INVALID FILE!!\n");
+      }
+      f_close(&song_file);
+    }
+  }
+}
+               
+               
+               
 // 'static' to make these functions 'private' to this file
 static void create_blinky_tasks(void);
 static void create_uart_task(void);
