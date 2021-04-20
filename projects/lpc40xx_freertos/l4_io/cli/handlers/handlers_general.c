@@ -1,6 +1,6 @@
+#include "FreeRTOS.h"
 #include "cli_handlers.h"
 #include "queue.h" //added for mp3
-#include "FreeRTOS.h"
 #include "task.h"
 
 #include "uart_printf.h"
@@ -96,11 +96,11 @@ app_cli_status_e cli__mp3_play(app_cli__argument_t argument, sl_string_t user_in
                                app_cli__print_string_function cli_output) {
   // user_input_minus_command_name is actually a 'char *' pointer type
   // We tell the Queue to copy 32 bytes of songname from this location
-  if(xQueueSend(Q_songname, user_input_minus_command_name, portMAX_DELAY)){
-     printf("Sent %s over to the Q_songname\n", user_input_minus_command_name);
-  }
-  else{
-     printf("Failed to send %s over to the Q_songname\n", user_input_minus_command_name);
+  if (xQueueSend(Q_songname, user_input_minus_command_name, portMAX_DELAY)) {
+    printf("Sent %s over to the Q_songname\n", user_input_minus_command_name);
+  } else {
+    printf("Failed to send %s over to the Q_songname\n", user_input_minus_command_name);
   }
 
   return APP_CLI_STATUS__SUCCESS;
+}
