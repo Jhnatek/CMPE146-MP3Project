@@ -19,8 +19,8 @@ QueueHandle_t Q_songdata;
 
 void main(void) {
   sj2_cli__init();
-  xTaskCreate(mp3_reader_task, "mp3_reader_task", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
-  xTaskCreate(mp3_player_task, "mp3_player_task", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
+  xTaskCreate(mp3_read_task, "read-task", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
+  xTaskCreate(mp3_play_task, "play-task", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   Q_songname = xQueueCreate(1, sizeof(songname));
   Q_songdata = xQueueCreate(1, 512);
 
@@ -52,11 +52,11 @@ void mp3_player_task(void *p) {
   while (1) {
     xQueueReceive(Q_songdata, &bytes_512[0], portMAX_DELAY);
     for (int i = 0; i < sizeof(bytes_512); i++) {
-      while (!mp3_decoder_needs_data()) {
+      while (!mp3_decoder_needs_data()) { //need to make this
         vTaskDelay(1);
       }
 
-      spi_send_to_mp3_decoder(bytes_512[i]);
+      spi_send_to_mp3_decoder(bytes_512[i]); //need to make this
     }
   }
 }
