@@ -38,8 +38,9 @@ void sj2_cli__init(void) {
                                              "tasklist <time>' will display CPU utilization within this time window.",
                                          .app_cli_handler = cli__task_list};
 
-  static app_cli__command_s mp3_play = {
-      .command_name = "mp3", .help_message_for_command = "plays a song on the MP3\n", .app_cli_handler = cli__mp3_play};
+  static app_cli__command_s mp3_play = {.command_name = "mp3_play",
+                                        .help_message_for_command = "plays a song on the MP3\n",
+                                        .app_cli_handler = cli__mp3_play};
 
   // Add your CLI commands in descending sorted order to make them appear in sorted order
   app_cli__add_command_handler(&sj2_cli_struct, &uart3_transmit);

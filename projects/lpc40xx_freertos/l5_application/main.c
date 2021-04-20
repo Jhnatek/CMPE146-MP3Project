@@ -18,9 +18,11 @@ void mp3_player_task(void *p);
 QueueHandle_t Q_songname;
 QueueHandle_t Q_songdata;
 
+// flash: python nxp-programmer/flash.py
+
 void main(void) {
   sj2_cli__init();
-  xTaskCreate(mp3_reader_task, "read-task", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
+  xTaskCreate(mp3_reader_task, "read-task", (4096 / sizeof(void *)), NULL, PRIORITY_HIGH, NULL);
   xTaskCreate(mp3_player_task, "play-task", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   Q_songname = xQueueCreate(1, sizeof(songname_t));
   Q_songdata = xQueueCreate(1, 512);
@@ -32,21 +34,24 @@ void main(void) {
 void mp3_reader_task(void *p) {
   songname_t name;
   char bytes_512[512];
-  UINT byte_reader = 0;
+  UINT *byte_reader;
+  FRESULT file;
+  const char *song_pointer = name; // maybe delete
+  FIL songFile;
   while (true) {
     if (xQueueReceive(Q_songname, &name, portMAX_DELAY)) {
-      const char *song_pointer = name;
-      FIL songFile;
-      FRESULT file = f_open(&songFile, song_pointer, (FA_READ));
+      file = f_open(&songFile, name, FA_READ);
+      fprintf(stderr, "file %d\n", file);
       if (FR_OK == file) {
-        f_read(&songFile, bytes_512, 512, &byte_reader);
-        if (byte_reader != 0) {
-          xQueueSend(Q_songdata, &bytes_512[0], portMAX_DELAY);
-        } else {
-          printf("ERROR: FAILED TO PLAY!!\n");
+        while (!f_eof(&songFile)) {
+          f_read(&songFile, bytes_512, 512, &byte_reader);
+          fprintf(stderr, "reading file \n");
+          xQueueSend(Q_songdata, &bytes_512, portMAX_DELAY);
         }
+        f_close(&songFile);
+      } else {
+        fprintf(stderr, "Failed to open file \n");
       }
-      f_close(&file);
     }
   }
 }
