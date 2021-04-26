@@ -1,5 +1,5 @@
 #include "decoder.h"
-//josh moved includes to .h
+// josh moved includes to .h
 static const gpio_s SCLK = {0, 1}; // slave clock // pin 1.0 //Josh changed this to pin 0.1i
 static const gpio_s SI = {1, 1};   // Slave in //pin 1.1
 static const gpio_s SO = {1, 4};   // slave out  // pin 1.4
@@ -54,7 +54,7 @@ bool mp3_decoder__needs_data(void) {
 }
 
 void spi_send_to_mp3_decoder(char *data) {
-  gpio__clear(XDCS);
+  gpio__reset(XDCS);
   ssp2__exchange_byte(data);
   gpio__set(XDCS);
 }
