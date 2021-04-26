@@ -1,0 +1,55 @@
+#include <stdio.h>
+#include "FreeRTOS.h"
+#include "task.h"
+#include "board_io.h"
+#include "common_macros.h"
+#include "periodic_scheduler.h"
+#include "sj2_cli.h"
+#include "lpc40xx.h"
+#include "lpc_peripherals.h"
+#include "semphr.h"
+#include "gpio.h"
+#include "queue.h"
+#include "task.h"
+#include <stdlib.h>
+#include "event_groups.h"
+#include "ff.h"
+#include "ssp2.h"
+#include <string.h>
+
+
+
+typedef char songname_t[32];
+typedef char songbyte_t[512];
+QueueHandle_t Q_songname;
+QueueHandle_t Q_songdata;
+
+
+
+static const uint32_t play_pause_pin = (1 << 19);
+TaskHandle_t MP3PlayPause =NULL;
+void play_pause_button(void *p) {
+  bool pause = false;
+  uint8_t alternative = 1;
+  while (true) {
+    vTaskDelay(100);
+    if (gpio1__get_level(play_pause_pin)) {
+      while (gpio1__get_level(play_pause_pin)) {
+        vTaskDelay(1);
+      }
+      pause = true;
+    } else {
+      pause = false;
+    }
+    if (pause) {
+      if (alternative) {
+        vTaskResume(MP3PlayPause);
+        alternative--;
+      } else {
+        vTaskSuspend(MP3PlayPause);
+        alternative--;
+      }
+    }
+    vTaskDelay(1);
+  }
+}
