@@ -64,7 +64,7 @@ void mp3_player_task(void *p) {
   while (1) {
     xQueueReceive(Q_songdata, &bytes_512[0], portMAX_DELAY);
     for (int i = 0; i < sizeof(bytes_512); i++) {
-      while (!mp3_decoder_needs_data()) { // need to make this
+      while (!mp3_decoder__needs_data()) { // need to make this
         fprintf(stderr, "%x", bytes_512[i]);
       }
 
