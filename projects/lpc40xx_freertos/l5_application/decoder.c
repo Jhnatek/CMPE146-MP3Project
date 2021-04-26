@@ -8,12 +8,22 @@ static const gpio_s RST = {0, 8};   // data request // pin 0.8 //josh renamed fr
 static const gpio_s CS = {0, 26};   // CS // pin 0.26
 static const gpio_s XDCS = {1, 31}; // data cs // pin 1.31
 static const gpio_s DREQ = {1, 20}; // data request // pin 1.20
+static void MP3_decoder__enable_CS(void) { gpio__reset(CS); }
+static void MP3_decoder__disable_CS(void) { gpio__set(CS); }
 
 static void MP3_decoder__softreset(void) {
   MP3_decoder__sci_write(0x0, 0x800 | 0x4);
   delay__ms(100);
 }
 
+void MP3_decoder__sci_write(uint8_t address, uint16_t data) {
+  MP3_decoder__enable_CS();
+  ssp2__exchange_byte(0x2);
+  ssp2__exchange_byte(address);
+  ssp2__exchange_byte((data >> 8) & 0xFF);
+  ssp2__exchange_byte((data >> 0) & 0xFF);
+  MP3_decoder__disable_CS();
+}
 static void MP3_decoder__reset(void) {
   if (!gpio__get(RST)) {
     gpio__reset(RST);
