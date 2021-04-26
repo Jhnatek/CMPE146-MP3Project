@@ -7,6 +7,7 @@
 #include "app_cli.h"
 #include "board_io.h"
 #include "common_macros.h"
+#include "decoder.h"
 #include "ff.h"
 #include "periodic_scheduler.h"
 #include "semphr.h"
@@ -63,10 +64,11 @@ void mp3_player_task(void *p) {
   while (1) {
     xQueueReceive(Q_songdata, &bytes_512[0], portMAX_DELAY);
     for (int i = 0; i < sizeof(bytes_512); i++) {
-       while (!mp3_decoder_needs_data()) { //need to make this
-      fprintf(stderr, "%x", bytes_512[i]);
-    }
+      while (!mp3_decoder_needs_data()) { // need to make this
+        fprintf(stderr, "%x", bytes_512[i]);
+      }
 
-    spi_send_to_mp3_decoder(bytes_512[i]); //need to make this
+      spi_send_to_mp3_decoder(bytes_512[i]); // need to make this
+    }
   }
 }
