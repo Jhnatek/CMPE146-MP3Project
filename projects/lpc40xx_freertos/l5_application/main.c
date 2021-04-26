@@ -23,6 +23,7 @@ QueueHandle_t Q_songdata;
 
 void main(void) {
   sj2_cli__init();
+  mp3_decoder__initialize();
   xTaskCreate(mp3_reader_task, "read-task", (4096 / sizeof(void *)), NULL, PRIORITY_HIGH, NULL);
   xTaskCreate(mp3_player_task, "play-task", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   Q_songname = xQueueCreate(1, sizeof(songname_t));
@@ -67,8 +68,9 @@ void mp3_player_task(void *p) {
       while (!mp3_decoder__needs_data()) { // need to make this
         fprintf(stderr, "%x", bytes_512[i]);
       }
-
+      fprintf(stderr, "Sending to decoder:\n");
       spi_send_to_mp3_decoder(bytes_512[i]); // need to make this
+      fprintf(stderr, "sent\n");
     }
   }
-}
+} // josh added, double check its where you want

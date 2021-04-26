@@ -43,7 +43,7 @@ void mp3_decoder__initialize(void) {
   gpio__set_as_input(DREQ);
 
   ssp2__initialize(1000); // Change frequency
-  mp3_decoder__reset();
+  MP3_decoder__reset();
 }
 
 bool mp3_decoder__needs_data(void) {
