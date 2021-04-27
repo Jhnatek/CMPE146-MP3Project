@@ -88,8 +88,8 @@ void play_pause_button(void *p) {
   uint8_t alternative = 1;
   while (true) {
     vTaskDelay(100);
-    if (gpio1__get_level(play_pause_pin)) {
-      while (gpio1__get_level(play_pause_pin)) {
+    if (gpio1__get(play_pause_pin)) {
+      while (gpio1__get(play_pause_pin)) {
         vTaskDelay(1);
       }
       pause = true;
