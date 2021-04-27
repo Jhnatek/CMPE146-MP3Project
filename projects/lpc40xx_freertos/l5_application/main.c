@@ -3,160 +3,108 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
+#include "LPC40xx.h"
+#include "app_cli.h"
 #include "board_io.h"
 #include "common_macros.h"
+#include "decoder.h"
+#include "ff.h"
 #include "periodic_scheduler.h"
+#include "semphr.h"
 #include "sj2_cli.h"
 
+typedef char songname_t[16]; // not quite sure what the purpose of this is, im prettu sure its used in app_cli.c
+typedef char songbyte_t[512];
+static const uint32_t play_pause_pin = (1 << 19);
+TaskHandle_t MP3PlayPause =NULL;
+void play_pause_button(void *p)
+void mp3_reader_task(void *p);
+void mp3_player_task(void *p);
+QueueHandle_t Q_songname;
+QueueHandle_t Q_songdata;
 
------------READ----------------
-
-void file_opener(void *p) {
-  songname_t song;
-  char bytes_512[512];
-  UINT byte_reader = 0;
-  while (true) {
-    if (xQueueReceive(Q_song, &song[0], portMAX_DELAY)) {
-      printf("ABOUT TO PLAY: %s!!\n", song);
-      FRESULT file = f_open(&song_file, &name[0], FA_READ);
-      if (FR_OK == file) {
-        while (!f_eof(&file) {
-          if (FR_OK == f_read(&song_file, bytes_512, 512, &byte_reader)) {
-            printf("\n READING SONG!! \n");
-            xQueueSend(Q_song, &bytes_512[0], portMAX_DELAY);
-            vTaskDelay(100);
-          } else {
-            printf("ERROR: FAILED TO PLAY!!\n");
-          }
-        }
-      } else {
-        printf("INVALID FILE!!\n");
-      }
-      f_close(&song_file);
-    }
-  }
-}
-               
-               
-               
-// 'static' to make these functions 'private' to this file
-static void create_blinky_tasks(void);
-static void create_uart_task(void);
-static void blink_task(void *params);
-static void uart_task(void *params);
-
-// lab 2
-static void task_one(void *task_parameter) {
-  while (true) {
-    // Read existing main.c regarding when we should use fprintf(stderr...) in place of printf()
-    // For this lab, we will use fprintf(stderr, ...)
-    fprintf(stderr, "AAAAAAAAAAAA");
-
-    // Sleep for 100ms
-    vTaskDelay(100);
-  }
-}
-
-static void task_two(void *task_parameter) {
-  while (true) {
-    fprintf(stderr, "bbbbbbbbbbbb");
-    vTaskDelay(100);
-  }
-}
 
 // flash: python nxp-programmer/flash.py
 
-int main(void) {
-  create_blinky_tasks();
-  create_uart_task();
-
-  // If you have the ESP32 wifi module soldered on the board, you can try uncommenting this code
-  // See esp32/README.md for more details
-  // uart3_init();                                                                     // Also include:  uart3_init.h
-  // xTaskCreate(esp32_tcp_hello_world_task, "uart3", 1000, NULL, PRIORITY_LOW, NULL); // Include esp32_task.h
-
-  puts("Starting RTOS,  why hello there world");
-  // LAB 2
-
-  xTaskCreate(task_one, "aaaaaa", 1000, NULL, PRIORITY_LOW, NULL);
-  xTaskCreate(task_two, "bbbbbb", 1000, NULL, PRIORITY_HIGH, NULL);
-
-  vTaskStartScheduler(); // This function never returns unless RTOS scheduler runs out of memory and fails
-
-  return 0;
-}
-
-static void create_blinky_tasks(void) {
-  /**
-   * Use '#if (1)' if you wish to observe how two tasks can blink LEDs
-   * Use '#if (0)' if you wish to use the 'periodic_scheduler.h' that will spawn 4 periodic tasks, one for each LED
-   */
-#if (1)
-  // These variables should not go out of scope because the 'blink_task' will reference this memory
-  static gpio_s led0, led1;
-
-  led0 = board_io__get_led0();
-  led1 = board_io__get_led1();
-
-  xTaskCreate(blink_task, "led0", configMINIMAL_STACK_SIZE, (void *)&led0, PRIORITY_LOW, NULL);
-  xTaskCreate(blink_task, "led1", configMINIMAL_STACK_SIZE, (void *)&led1, PRIORITY_LOW, NULL);
-#else
-  const bool run_1000hz = true;
-  const size_t stack_size_bytes = 2048 / sizeof(void *); // RTOS stack size is in terms of 32-bits for ARM M4 32-bit CPU
-  periodic_scheduler__initialize(stack_size_bytes, !run_1000hz); // Assuming we do not need the high rate 1000Hz task
-  UNUSED(blink_task);
-#endif
-}
-
-static void create_uart_task(void) {
-  // It is advised to either run the uart_task, or the SJ2 command-line (CLI), but not both
-  // Change '#if (0)' to '#if (1)' and vice versa to try it out
-#if (0)
-  // printf() takes more stack space, size this tasks' stack higher
-  xTaskCreate(uart_task, "uart", (512U * 8) / sizeof(void *), NULL, PRIORITY_LOW, NULL);
-#else
+void main(void) {
   sj2_cli__init();
-  UNUSED(uart_task); // uart_task is un-used in if we are doing cli init()
-#endif
+  mp3_decoder__initialize();
+  xTaskCreate(play_pause_button, "Play/Pause", (4096 / sizeof(void *)),, NULL, Priority_Medium, NULL);
+  xTaskCreate(mp3_reader_task, "read-task", (4096 / sizeof(void *)), NULL, PRIORITY_HIGH, NULL);
+  xTaskCreate(mp3_player_task, "play-task", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
+  Q_songname = xQueueCreate(1, sizeof(songname_t));
+  Q_songdata = xQueueCreate(1, 512);
+
+  vTaskStartScheduler();
 }
 
-static void blink_task(void *params) {
-  const gpio_s led = *((gpio_s *)params); // Parameter was input while calling xTaskCreate()
-
-  // Warning: This task starts with very minimal stack, so do not use printf() API here to avoid stack overflow
+// Reader tasks receives song-name over Q_songname to start reading it
+void mp3_reader_task(void *p) {
+  songname_t name;
+  char bytes_512[512];
+  UINT *byte_reader;
+  FRESULT file;
+  const char *song_pointer = name; // maybe delete
+  FIL songFile;
   while (true) {
-    gpio__toggle(led);
-    vTaskDelay(500);
+    if (xQueueReceive(Q_songname, &name, portMAX_DELAY)) {
+      file = f_open(&songFile, name, FA_READ);
+      fprintf(stderr, "file %d\n", file);
+      if (FR_OK == file) {
+        while (!f_eof(&songFile)) {
+          f_read(&songFile, bytes_512, 512, &byte_reader);
+          fprintf(stderr, "reading file \n");
+          xQueueSend(Q_songdata, &bytes_512, portMAX_DELAY);
+        }
+        f_close(&songFile);
+      } else {
+        fprintf(stderr, "Failed to open file \n");
+      }
+    }
   }
 }
 
-// This sends periodic messages over printf() which uses system_calls.c to send them to UART0
-static void uart_task(void *params) {
-  TickType_t previous_tick = 0;
-  TickType_t ticks = 0;
+// Player task receives song data over Q_songdata to send it to the MP3 decoder
+void mp3_player_task(void *p) {
+  char bytes_512[512];
 
+  while (1) {
+    xQueueReceive(Q_songdata, &bytes_512[0], portMAX_DELAY);
+    for (int i = 0; i < sizeof(bytes_512); i++) {
+      // fprintf(stderr, "%x", bytes_512[i]); used for testing milestone 1
+
+      while (!mp3_decoder__needs_data()) { // need to make this
+        fprintf(stderr, "%x", bytes_512[i]);
+      }
+      // fprintf(stderr, "Sending to decoder:\n");
+      spi_send_to_mp3_decoder(bytes_512[i]); // need to make this
+      // fprintf(stderr, "sent\n");
+    }
+  }
+} // josh added, double check its where you want
+
+void play_pause_button(void *p) {
+  bool pause = false;
+  uint8_t alternative = 1;
   while (true) {
-    // This loop will repeat at precise task delay, even if the logic below takes variable amount of ticks
-    vTaskDelayUntil(&previous_tick, 2000);
-
-    /* Calls to fprintf(stderr, ...) uses polled UART driver, so this entire output will be fully
-     * sent out before this function returns. See system_calls.c for actual implementation.
-     *
-     * Use this style print for:
-     *  - Interrupts because you cannot use printf() inside an ISR
-     *    This is because regular printf() leads down to xQueueSend() that might block
-     *    but you cannot block inside an ISR hence the system might crash
-     *  - During debugging in case system crashes before all output of printf() is sent
-     */
-    ticks = xTaskGetTickCount();
-    fprintf(stderr, "%u: This is a polled version of printf used for debugging ... finished in", (unsigned)ticks);
-    fprintf(stderr, " %lu ticks\n", (xTaskGetTickCount() - ticks));
-
-    /* This deposits data to an outgoing queue and doesn't block the CPU
-     * Data will be sent later, but this function would return earlier
-     */
-    ticks = xTaskGetTickCount();
-    printf("This is a more efficient printf ... finished in");
-    printf(" %lu ticks\n\n", (xTaskGetTickCount() - ticks));
+    vTaskDelay(100);
+    if (gpio1__get_level(play_pause_pin)) {
+      while (gpio1__get_level(play_pause_pin)) {
+        vTaskDelay(1);
+      }
+      pause = true;
+    } else {
+      pause = false;
+    }
+    if (pause) {
+      if (alternative) {
+        vTaskResume(MP3PlayPause);
+        alternative--;
+      } else {
+        vTaskSuspend(MP3PlayPause);
+        alternative--;
+      }
+    }
+    vTaskDelay(1);
   }
 }
