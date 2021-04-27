@@ -14,16 +14,22 @@
 #include "sj2_cli.h"
 
 typedef char songname_t[16]; // not quite sure what the purpose of this is, im prettu sure its used in app_cli.c
+typedef char songbyte_t[512];
+static const uint32_t play_pause_pin = (1 << 19);
+TaskHandle_t MP3PlayPause =NULL;
+void play_pause_button(void *p)
 void mp3_reader_task(void *p);
 void mp3_player_task(void *p);
 QueueHandle_t Q_songname;
 QueueHandle_t Q_songdata;
+
 
 // flash: python nxp-programmer/flash.py
 
 void main(void) {
   sj2_cli__init();
   mp3_decoder__initialize();
+  xTaskCreate(play_pause_button, "Play/Pause", (4096 / sizeof(void *)),, NULL, Priority_Medium, NULL);
   xTaskCreate(mp3_reader_task, "read-task", (4096 / sizeof(void *)), NULL, PRIORITY_HIGH, NULL);
   xTaskCreate(mp3_player_task, "play-task", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   Q_songname = xQueueCreate(1, sizeof(songname_t));
@@ -76,3 +82,29 @@ void mp3_player_task(void *p) {
     }
   }
 } // josh added, double check its where you want
+
+void play_pause_button(void *p) {
+  bool pause = false;
+  uint8_t alternative = 1;
+  while (true) {
+    vTaskDelay(100);
+    if (gpio1__get_level(play_pause_pin)) {
+      while (gpio1__get_level(play_pause_pin)) {
+        vTaskDelay(1);
+      }
+      pause = true;
+    } else {
+      pause = false;
+    }
+    if (pause) {
+      if (alternative) {
+        vTaskResume(MP3PlayPause);
+        alternative--;
+      } else {
+        vTaskSuspend(MP3PlayPause);
+        alternative--;
+      }
+    }
+    vTaskDelay(1);
+  }
+}
