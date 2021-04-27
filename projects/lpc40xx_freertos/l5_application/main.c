@@ -65,12 +65,14 @@ void mp3_player_task(void *p) {
   while (1) {
     xQueueReceive(Q_songdata, &bytes_512[0], portMAX_DELAY);
     for (int i = 0; i < sizeof(bytes_512); i++) {
+      // fprintf(stderr, "%x", bytes_512[i]); used for testing milestone 1
+
       while (!mp3_decoder__needs_data()) { // need to make this
         fprintf(stderr, "%x", bytes_512[i]);
       }
-      fprintf(stderr, "Sending to decoder:\n");
+      // fprintf(stderr, "Sending to decoder:\n");
       spi_send_to_mp3_decoder(bytes_512[i]); // need to make this
-      fprintf(stderr, "sent\n");
+      // fprintf(stderr, "sent\n");
     }
   }
 } // josh added, double check its where you want
