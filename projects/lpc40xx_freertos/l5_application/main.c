@@ -29,7 +29,7 @@ QueueHandle_t Q_songdata;
 void main(void) {
   sj2_cli__init();
   mp3_decoder__initialize();
-  xTaskCreate(play_pause_button, "Play/Pause", (4096 / sizeof(void *)), NULL, Priority_Medium, NULL);
+  xTaskCreate(play_pause_button, "Play/Pause", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   xTaskCreate(mp3_reader_task, "read-task", (4096 / sizeof(void *)), NULL, PRIORITY_HIGH, NULL);
   xTaskCreate(mp3_player_task, "play-task", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   Q_songname = xQueueCreate(1, sizeof(songname_t));
