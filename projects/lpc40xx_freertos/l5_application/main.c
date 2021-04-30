@@ -12,7 +12,6 @@
 #include "periodic_scheduler.h"
 #include "semphr.h"
 #include "sj2_cli.h"
-#include <gpio_lab.h>
 #include <stdbool.h>
 #include <stdint.h>
 #define SCI_VOL 0x0B
@@ -25,6 +24,9 @@ void Play_Pause_Button(void *p);
 void Volume_Control(void *p);
 void mp3_reader_task(void *p);
 void mp3_player_task(void *p);
+ gpio_s volume_up = gpio__construct_as_input(1, 10);
+  gpio_s volume_down = gpio__construct_as_input(1, 14);
+  gpio_s play_pause = gpio__construct_as_input(1, 9);
 volumeControl(bool higher, bool init);
 QueueHandle_t Q_songname;
 QueueHandle_t Q_songdata;
@@ -36,9 +38,9 @@ uint8_t volume_level = 5;
 void main(void) {
   sj2_cli__init();
   mp3_decoder__initialize();
-  gpio1__set_as_input(9);
-  gpio1__set_as_input(10);
-  gpio1__set_as_input(14);
+  // gpio1__set_as_input(9);
+  // gpio1__set_as_input(10);
+  // gpio1__set_as_input(14);
   xTaskCreate(Play_Pause_Button, "Play/Pause", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   xTaskCreate(Volume_Control, "Volume Control", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   xTaskCreate(mp3_reader_task, "read-task", (4096 / sizeof(void *)), NULL, PRIORITY_HIGH, NULL);
@@ -95,7 +97,7 @@ void mp3_player_task(void *p) {
 } // josh added, double check its where you want
 
 void Play_Pause_Button(void *p) {
-  gpio1__set_as_input(9);
+  // gpio1__set_as_input(9);
   bool pause = false;
   uint8_t alternative = 1;
   while (true) {
@@ -103,8 +105,8 @@ void Play_Pause_Button(void *p) {
     uint8_t alternate_status = 1;
     while (1) {
       vTaskDelay(100);
-      if (gpio1__get_level(9)) {
-        while (gpio1__get_level(9)) {
+      if (gpio1__get_level(play_pause)) {
+        while (gpio1__get_level(play_pause)) {
           vTaskDelay(1);
         }
         play_status = true;
@@ -127,21 +129,21 @@ void Play_Pause_Button(void *p) {
 }
 
 void Volume_Control(void *p) {
-  gpio1__set_as_input(10);
-  gpio1__set_as_input(14);
-  // Volume up pin: 10
-  // Volume down pin: 14
+  // gpio_s volume_up = gpio__construct_as_input(1, 10);
+  // gpio_s volume down = gpio__construct_as_input(1, 14);
+  // Volume up pin: 10 port 1
+  // Volume down pin: 14 port 1
   bool left_vol = false;
   bool right_vol = false;
   while (1) {
     vTaskDelay(100);
-    if (gpio1__get_level(10)) {
-      while (gpio1__get_level(10)) {
+    if (volume_up) {
+      while (volume_up) {
         vTaskDelay(1);
       }
       left_vol = true;
-    } else if (gpio1__get_level(14)) {
-      while (gpio1__get_level(14)) {
+    } else if (volume_down) {
+      while (volume_down) {
         vTaskDelay(1);
       }
       right_vol = true;
@@ -165,28 +167,28 @@ volumeControl(bool higher, bool init) {
 
   if (volume_level == 8) {
     MP3_decoder__sci_write(SCI_VOL, 0x1010);
-    fprintf("volume level = %i", volume_level);
+    fprintf("volume: %i", volume_level);
   } else if (volume_level == 7) {
     MP3_decoder__sci_write(SCI_VOL, 0x2020);
-    fprintf("volume level = %i", volume_level);
+    fprintf("volume: %i", volume_level);
   } else if (volume_level == 6) {
     MP3_decoder__sci_write(SCI_VOL, 0x2525);
-    fprintf("volume level = %i", volume_level);
+    fprintf("volume: %i", volume_level);
   } else if (volume_level == 5) {
     MP3_decoder__sci_write(SCI_VOL, 0x3030);
-    fprintf("volume level = %i", volume_level);
+    fprintf("volume: %i", volume_level);
   } else if (volume_level == 4) {
     MP3_decoder__sci_write(SCI_VOL, 0x3535);
-    fprintf("volume level = %i", volume_level);
+    fprintf("volume: %i", volume_level);
   } else if (volume_level == 3) {
     MP3_decoder__sci_write(SCI_VOL, 0x4040);
-    fprintf("volume level = %i", volume_level);
+    fprintf("volume: %i", volume_level);
   } else if (volume_level == 2) {
     MP3_decoder__sci_write(SCI_VOL, 0x4545);
-    fprintf("volume level = %i", volume_level);
+    fprintf("volume: %i", volume_level);
   } else if (volume_level == 1) {
     MP3_decoder__sci_write(SCI_VOL, 0xFEFE);
-    fprintf("volume level = %i", volume_level);
+    fprintf("volume: %i", volume_level);
   }
   vTaskDelay(1000);
 }
