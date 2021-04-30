@@ -24,9 +24,9 @@ void Play_Pause_Button(void *p);
 void Volume_Control(void *p);
 void mp3_reader_task(void *p);
 void mp3_player_task(void *p);
- gpio_s volume_up = gpio__construct_as_input(1, 10);
-  gpio_s volume_down = gpio__construct_as_input(1, 14);
-  gpio_s play_pause = gpio__construct_as_input(1, 9);
+gpio_s volume_up = gpio__construct_as_input(1, 10);
+gpio_s volume_down = gpio__construct_as_input(1, 14);
+gpio_s play_pause = gpio__construct_as_input(1, 9);
 volumeControl(bool higher, bool init);
 QueueHandle_t Q_songname;
 QueueHandle_t Q_songdata;
@@ -105,8 +105,8 @@ void Play_Pause_Button(void *p) {
     uint8_t alternate_status = 1;
     while (1) {
       vTaskDelay(100);
-      if (gpio1__get_level(play_pause)) {
-        while (gpio1__get_level(play_pause)) {
+      if (gpio__get(play_pause) {
+        while (gpio__get(play_pause)) {
           vTaskDelay(1);
         }
         play_status = true;
@@ -137,13 +137,13 @@ void Volume_Control(void *p) {
   bool right_vol = false;
   while (1) {
     vTaskDelay(100);
-    if (volume_up) {
-      while (volume_up) {
+    if (gpio__get(volume_up)) {
+      while (gpio__get(volume_up)) {
         vTaskDelay(1);
       }
       left_vol = true;
-    } else if (volume_down) {
-      while (volume_down) {
+    } else if (gpio__get(volume_down)) {
+      while (gpio__get(volume_down)) {
         vTaskDelay(1);
       }
       right_vol = true;
