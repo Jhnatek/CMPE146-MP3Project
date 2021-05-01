@@ -9,6 +9,8 @@
         "mutex": "c",
         "new": "c",
         "type_traits": "c",
-        "*.def": "c"
+        "*.def": "c",
+        "memory_resource": "c",
+        "scoped_allocator": "c"
     }
 }

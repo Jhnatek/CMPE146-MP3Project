@@ -9,6 +9,7 @@
 #include "common_macros.h"
 #include "decoder.h"
 #include "ff.h"
+#include "gpio.h"
 #include "periodic_scheduler.h"
 #include "semphr.h"
 #include "sj2_cli.h"
@@ -24,9 +25,12 @@ void Play_Pause_Button(void *p);
 void Volume_Control(void *p);
 void mp3_reader_task(void *p);
 void mp3_player_task(void *p);
-gpio_s volume_up = gpio__construct_as_input(1, 10);
-gpio_s volume_down = gpio__construct_as_input(1, 14);
-gpio_s play_pause = gpio__construct_as_input(1, 9);
+volume_up = gpio__construct(1, 10);
+volume_down = gpio__construct(1, 14);
+play_pause = gpio__construct(1, 9);
+gpio__set_as_input(volume_up);
+gpio__set_as_input(volume_down);
+gpio__set_as_input(play_pause);
 volumeControl(bool higher, bool init);
 QueueHandle_t Q_songname;
 QueueHandle_t Q_songdata;
@@ -105,7 +109,7 @@ void Play_Pause_Button(void *p) {
     uint8_t alternate_status = 1;
     while (1) {
       vTaskDelay(100);
-      if (gpio__get(play_pause) {
+      if (gpio__get(play_pause)) {
         while (gpio__get(play_pause)) {
           vTaskDelay(1);
         }
