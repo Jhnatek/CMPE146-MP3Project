@@ -16,9 +16,11 @@
 #include <stdbool.h>
 #include <stdint.h>
 #define SCI_VOL 0x0B
-#define volume_up gpio__construct_as_input(GPIO__FUNCTION_1, 10)
-#define volume_down gpio__construct_as_input(GPIO__FUNCTION_1, 14)
-#define play_pause gpio__construct_as_input(GPIO__FUNCTION_1, 9)
+#define volume_up gpio__construct_as_input(1, 10)
+#define volume_down gpio__construct_as_input(1, 14)
+#define play_pause gpio__construct_as_input(1, 9)
+
+
 // LPC_IOCON->P0_8 &= ~(3 << 3);
 // LPC_IOCON->P0_8 |= (1 << 3);
 typedef char songname_t[16]; // not quite sure what the purpose of this is, im prettu sure its used in app_cli.c
