@@ -16,7 +16,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 #define SCI_VOL 0x0B
-
+#define volume_up gpio__construct_as_input(GPIO__FUNCTION_1, 10)
+#define volume_down gpio__construct_as_input(GPIO__FUNCTION_1, 14)
+#define play_pause gpio__construct_as_input(GPIO__FUNCTION_1, 9)
 // LPC_IOCON->P0_8 &= ~(3 << 3);
 // LPC_IOCON->P0_8 |= (1 << 3);
 typedef char songname_t[16]; // not quite sure what the purpose of this is, im prettu sure its used in app_cli.c
@@ -25,12 +27,15 @@ void Play_Pause_Button(void *p);
 void Volume_Control(void *p);
 void mp3_reader_task(void *p);
 void mp3_player_task(void *p);
-volume_up = gpio__construct(1, 10);
-volume_down = gpio__construct(1, 14);
-play_pause = gpio__construct(1, 9);
-gpio__set_as_input(volume_up);
-gpio__set_as_input(volume_down);
-gpio__set_as_input(play_pause);
+// uint8_t volume_up_pin = 10;
+// uint8_t volume_down_pin = 14;
+// uint8_t play_pause_pin = 9;
+// static gpio_s volume_up = gpio__construct_as_input(GPIO__FUNCTION_1, volume_up_pin);
+// static gpio_s volume_down = gpio__construct_as_input(GPIO__FUNCTION_1, volume_down_pin);
+// static gpio_s play_pause = gpio__construct_as_input(GPIO__FUNCTION_1, play_pause_pin);
+// gpio__set_as_input(volume_up);
+// gpio__set_as_input(volume_down);
+// gpio__set_as_input(play_pause);
 volumeControl(bool higher, bool init);
 QueueHandle_t Q_songname;
 QueueHandle_t Q_songdata;

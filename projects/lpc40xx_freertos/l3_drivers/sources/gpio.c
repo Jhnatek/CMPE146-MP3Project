@@ -39,7 +39,6 @@ gpio_s gpio__construct_as_input(gpio__port_e port, uint8_t pin_number_0_to_31) {
   gpio_s gpio = gpio__construct(port, pin_number_0_to_31);
   gpio__set_as_input(gpio);
   return gpio;
-
 }
 gpio_s gpio__construct_as_output(gpio__port_e port, uint8_t pin_number_0_to_31) {
   gpio_s gpio = gpio__construct(port, pin_number_0_to_31);
