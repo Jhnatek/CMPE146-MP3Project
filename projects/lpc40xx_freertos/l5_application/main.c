@@ -18,7 +18,7 @@
 #define SCI_VOL 0x0B
 #define volume_up gpio__construct_as_input(1, 10)
 #define volume_down gpio__construct_as_input(1, 14)
-#define play_pause gpio__construct_as_input(1, 9)
+#define play_pause gpio__construct_as_input(1, 19)
 
 
 // LPC_IOCON->P0_8 &= ~(3 << 3);
@@ -53,7 +53,7 @@ void main(void) {
   // gpio1__set_as_input(10);
   // gpio1__set_as_input(14);
   xTaskCreate(Play_Pause_Button, "Play/Pause", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
-  xTaskCreate(Volume_Control, "Volume Control", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
+  // xTaskCreate(Volume_Control, "Volume Control", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   xTaskCreate(mp3_reader_task, "read-task", (4096 / sizeof(void *)), NULL, PRIORITY_HIGH, NULL);
   xTaskCreate(mp3_player_task, "play-task", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   Q_songname = xQueueCreate(1, sizeof(songname_t));
@@ -91,12 +91,15 @@ void mp3_reader_task(void *p) {
 // Player task receives song data over Q_songdata to send it to the MP3 decoder
 void mp3_player_task(void *p) {
   char bytes_512[512];
+    // bool pause = false;
+  // uint8_t alternative = 1;
 
   while (1) {
     xQueueReceive(Q_songdata, &bytes_512[0], portMAX_DELAY);
     for (int i = 0; i < sizeof(bytes_512); i++) {
-      // fprintf(stderr, "%x", bytes_512[i]); used for testing milestone 1
-
+      // fprintf(stderr, "%x", bytes_512[i]); used for testing milestone 
+      bool play_status = false;
+    uint8_t alternate_status = 1;
       while (!mp3_decoder__needs_data()) { // need to make this
         fprintf(stderr, "%x", bytes_512[i]);
       }
