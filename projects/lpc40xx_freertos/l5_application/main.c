@@ -106,6 +106,7 @@ void mp3_player_task(void *p) {
       // fprintf(stderr, "Sending to decoder:\n");
       spi_send_to_mp3_decoder(bytes_512[i]); // need to make this
       // fprintf(stderr, "sent\n");
+      
     }
   }
 } // josh added, double check its where you want
@@ -113,32 +114,36 @@ void mp3_player_task(void *p) {
 void Play_Pause_Button(void *p) {
   // gpio1__set_as_input(9);
   bool pause = false;
-  uint8_t alternative = 1;
-  while (true) {
-    bool play_status = false;
-    uint8_t alternate_status = 1;
-    while (1) {
-      vTaskDelay(100);
-      if (gpio__get(play_pause)) {
-        while (gpio__get(play_pause)) {
-          vTaskDelay(1);
-        }
-        play_status = true;
-      } else {
-        play_status = false;
-      }
-
-      if (play_status) {
-        if (alternate_status) {
-          vTaskResume(mp3_player_task);
-          alternate_status--;
-        } else {
-          vTaskSuspend(mp3_player_task);
-          alternate_status++;
-        }
-      }
-      vTaskDelay(1);
+  while (1) {
+    if (pause &&gpio__get(play_pause)) {
+      vTaskResume(mp3_player_task);
+      pause = false;
     }
+     if (pause = false && gpio__get(play_pause)) {
+        vTaskSuspend;
+        pause = true;
+      } 
+
+    // while (1) {
+    //   if (gpio__get(play_pause)) {
+    //     play_status = true;
+    //   } 
+
+    //   if (play_status) {
+    //     vTaskSuspend(mp3_player_task);
+    //     while (1) {
+          
+    //     }
+    //     if (alternate_status) {
+    //       vTaskResume(mp3_player_task);
+    //       alternate_status--;
+    //     } else {
+    //       vTaskSuspend(mp3_player_task);
+    //       alternate_status++;
+    //     }
+    //   }
+    //   vTaskDelay(1);
+    // }
   }
 }
 
