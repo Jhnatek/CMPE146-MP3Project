@@ -95,6 +95,14 @@ void mp3_player_task(void *p) {
   // uint8_t alternative = 1;
 
   while (1) {
+    if (gpio__get(play_pause){
+      if (pause == true) {
+        pause == false;
+      }
+      else if (pause == false) {
+        pause == true;
+      }
+    }
     if (pause == false) {
       pause == gpio__get(play_pause);
     xQueueReceive(Q_songdata, &bytes_512[0], portMAX_DELAY);
