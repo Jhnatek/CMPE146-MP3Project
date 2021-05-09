@@ -137,6 +137,12 @@ void Volume_Control(void *p) {
       while (gpio__get(volume_down)){      }
       decrease = true;
     }
+    if (!gpio__get(volume_up)) {
+      increase = false;
+    }
+    if (!gpio__get(volume_down)) {
+      decrease = false;
+    }
 
     if (increase) {
       volumeControl(true, false);
