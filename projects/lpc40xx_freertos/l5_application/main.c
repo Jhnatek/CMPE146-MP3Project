@@ -99,7 +99,6 @@ void mp3_player_task(void *p) {
 } // josh added, double check its where you want
 
 void Play_Pause_Button(void *p) {
-  // gpio1__set_as_input(9);
   bool pause = false;
   bool previous = false;
   while (1) {
