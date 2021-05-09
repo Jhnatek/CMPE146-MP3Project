@@ -145,10 +145,10 @@ void Volume_Control(void *p) {
 
     if (increase) {
       volumeControl(true, false);
-      left_vol = false;
+      increase = false;
     } else if (decrease) {
       volumeControl(false, false);
-      right_vol = false;
+      decrease = false;
     }
   }
 }
