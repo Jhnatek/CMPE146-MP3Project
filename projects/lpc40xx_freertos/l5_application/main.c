@@ -132,63 +132,28 @@ void Play_Pause_Button(void *p) {
       vTaskResume(Player);
     }
     
-    // if (pause == true && gpio__get(play_pause)) {
-    //   vTaskResume(mp3_player_task);
-    //   pause = false;
-    // }
-    //  if (pause == false && gpio__get(play_pause)) {
-    //     vTaskSuspend;
-    //     pause = true;
-    //   } 
-
-    // while (1) {
-    //   if (gpio__get(play_pause)) {
-    //     play_status = true;
-    //   } 
-
-    //   if (play_status) {
-    //     vTaskSuspend(mp3_player_task);
-    //     while (1) {
-          
-    //     }
-    //     if (alternate_status) {
-    //       vTaskResume(mp3_player_task);
-    //       alternate_status--;
-    //     } else {
-    //       vTaskSuspend(mp3_player_task);
-    //       alternate_status++;
-    //     }
-    //   }
-    //   vTaskDelay(1);
-    // }
   }
 }
 
 void Volume_Control(void *p) {
-  // gpio_s volume_up = gpio__construct_as_input(1, 10);
-  // gpio_s volume down = gpio__construct_as_input(1, 14);
   // Volume up pin: 10 port 1
   // Volume down pin: 14 port 1
-  bool left_vol = false;
-  bool right_vol = false;
+  bool increase = false;
+  bool decrease = false;
   while (1) {
-    vTaskDelay(100);
     if (gpio__get(volume_up)) {
-      while (gpio__get(volume_up)) {
-        vTaskDelay(1);
-      }
-      left_vol = true;
-    } else if (gpio__get(volume_down)) {
-      while (gpio__get(volume_down)) {
-        vTaskDelay(1);
-      }
-      right_vol = true;
+      while (gpio__get(volume_up)){      }
+      increase = true;
+    } 
+    if (gpio__get(volume_down)) {
+      while (gpio__get(volume_down)){      }
+      decrease = true;
     }
 
-    if (left_vol) {
+    if (increase) {
       volumeControl(true, false);
       left_vol = false;
-    } else if (right_vol) {
+    } else if (decrease) {
       volumeControl(false, false);
       right_vol = false;
     }
@@ -226,5 +191,4 @@ volumeControl(bool higher, bool init) {
     MP3_decoder__sci_write(SCI_VOL, 0xFEFE);
     fprintf("volume: %i", volume_level);
   }
-  vTaskDelay(1000);
 }
