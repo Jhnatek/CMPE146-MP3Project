@@ -81,20 +81,18 @@ void mp3_player_task(void *p) {
   char bytes_512[512];
 
   while (1) {
-  
+
     xQueueReceive(Q_songdata, &bytes_512[0], portMAX_DELAY);
     for (int i = 0; i < sizeof(bytes_512); i++) {
-      // fprintf(stderr, "%x", bytes_512[i]); used for testing milestone 
-    uint8_t alternate_status = 1;
+      // fprintf(stderr, "%x", bytes_512[i]); used for testing milestone
+      uint8_t alternate_status = 1;
       while (!mp3_decoder__needs_data()) { // need to make this
         fprintf(stderr, "%x", bytes_512[i]);
       }
       // fprintf(stderr, "Sending to decoder:\n");
       spi_send_to_mp3_decoder(bytes_512[i]); // need to make this
       // fprintf(stderr, "sent\n");
-      
     }
-  
   }
 } // josh added, double check its where you want
 
@@ -108,7 +106,7 @@ void Play_Pause_Button(void *p) {
     if (gpio__get(play_pause) && previous) {
       pause = false;
     }
-    if (!gpio__get(play_pause)){
+    if (!gpio__get(play_pause)) {
       previous = pause;
     }
     if (pause) {
@@ -118,7 +116,6 @@ void Play_Pause_Button(void *p) {
     if (!pause) {
       vTaskResume(Player);
     }
-    
   }
 }
 
@@ -129,11 +126,13 @@ void Volume_Control(void *p) {
   bool decrease = false;
   while (1) {
     if (gpio__get(volume_up)) {
-      while (gpio__get(volume_up)){      }
+      while (gpio__get(volume_up)) {
+      }
       increase = true;
-    } 
+    }
     if (gpio__get(volume_down)) {
-      while (gpio__get(volume_down)){      }
+      while (gpio__get(volume_down)) {
+      }
       decrease = true;
     }
     if (!gpio__get(volume_up)) {
