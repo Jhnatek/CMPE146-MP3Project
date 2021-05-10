@@ -4,24 +4,12 @@
 #include <stdint.h>
 
 typedef enum {
-  UART_2,
-  UART_3,
-} uart_number_e;
+  UART__2 = 2,
+  UART__3 = 3,
+} Uart_Number_E;
 
-void uart__enable_receive_interrupt(uart_number_e uart_number);
-bool uart_lab__get_char_from_queue(char *input_byte, uint32_t timeout);
+void Uart_Driver__Init(Uart_Number_E Uart, uint32_t Peripheral_Clock, uint32_t Baud_Rate);
 
-void uart_lab__init(uart_number_e uart, uint32_t peripheral_clock, uint32_t baud_rate);
-// Refer to LPC User manual and setup the register bits correctly
-// The first page of the UART chapter has good instructions
-// a) Power on Peripheral
-// b) Setup DLL, DLM, FDR, LCR registers
+bool Uart_Driver__Polled_Put(Uart_Number_E Uart, char output_byte);
 
-// Read the byte from RBR and actually save it to the pointer
-bool uart_lab__polled_get(uart_number_e uart, char *input_byte);
-// a) Check LSR for Receive Data Ready
-// b) Copy data from RBR register to input_byte
-
-bool uart_lab__polled_put(uart_number_e uart, char output_byte);
-// a) Check LSR for Transmit Hold Register Empty
-// b) Copy output_byte to THR register
+void Uart_Driver__Set_Baud_Rate(Uart_Number_E Uart, uint32_t Peripheral_Clock, uint32_t Baud_Rate);
