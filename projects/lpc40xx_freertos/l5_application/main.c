@@ -15,7 +15,7 @@
 #include "sj2_cli.h"
 #include <stdbool.h>
 #include <stdint.h>
-#define SCI_VOL 0x0B
+#define VOLUME 0x0B
 #define volume_up gpio__construct_as_input(1, 10)
 #define volume_down gpio__construct_as_input(1, 14)
 #define play_pause gpio__construct_as_input(1, 19)
@@ -29,9 +29,10 @@ void Play_Pause_Button(void *p);
 void Volume_Control(void *p);
 void mp3_reader_task(void *p);
 void mp3_player_task(void *p);
-volumeControl(bool higher, bool init);
+void volumeControl(bool higher, bool init);
 QueueHandle_t Q_songname;
 QueueHandle_t Q_songdata;
+SemaphoreHandle_t Decoder_Mutex;
 
 uint8_t volume_level = 5;
 
@@ -45,6 +46,7 @@ void main(void) {
   xTaskCreate(mp3_reader_task, "read-task", (4096 / sizeof(void *)), NULL, PRIORITY_HIGH, NULL);
   xTaskCreate(mp3_player_task, "play-task", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, &Player);
   Q_songname = xQueueCreate(1, sizeof(songname_t));
+  Decoder_Mutex = xSemaphoreCreateMutex();
   Q_songdata = xQueueCreate(1, 512);
 
   vTaskStartScheduler();
@@ -89,9 +91,12 @@ void mp3_player_task(void *p) {
       while (!mp3_decoder__needs_data()) { // need to make this
         fprintf(stderr, "%x", bytes_512[i]);
       }
-      // fprintf(stderr, "Sending to decoder:\n");
-      spi_send_to_mp3_decoder(bytes_512[i]); // need to make this
-      // fprintf(stderr, "sent\n");
+      if (xSemaphoreTake(Decoder_Mutex, portMAX_DELAY)) {
+        // fprintf(stderr, "Sending to decoder:\n");
+        spi_send_to_mp3_decoder(bytes_512[i]); // need to make this
+        // fprintf(stderr, "sent\n");
+        xSemaphoreGive(Decoder_Mutex);
+      }
     }
   }
 } // josh added, double check its where you want
@@ -125,21 +130,21 @@ void Volume_Control(void *p) {
   bool increase = false;
   bool decrease = false;
   while (1) {
+    vTaskDelay(10);
     if (gpio__get(volume_up)) {
       while (gpio__get(volume_up)) {
       }
       increase = true;
-    }
-    if (gpio__get(volume_down)) {
+    } else if (gpio__get(volume_down)) {
       while (gpio__get(volume_down)) {
       }
       decrease = true;
-    }
-    if (!gpio__get(volume_up)) {
-      increase = false;
-    }
-    if (!gpio__get(volume_down)) {
-      decrease = false;
+    } else {
+      if (!gpio__get(volume_up)) {
+        increase = false;
+      } else if (!gpio__get(volume_down)) {
+        decrease = false;
+      }
     }
 
     if (increase) {
@@ -151,36 +156,40 @@ void Volume_Control(void *p) {
     }
   }
 }
-volumeControl(bool higher, bool init) {
+void volumeControl(bool higher, bool init) {
   if (higher && volume_level < 8 && !init) {
     volume_level++;
   } else if (!higher && volume_level > 1 && !init) {
     volume_level--;
   }
-
-  if (volume_level == 8) {
-    MP3_decoder__sci_write(SCI_VOL, 0x1010);
-    fprintf("volume: %i", volume_level);
-  } else if (volume_level == 7) {
-    MP3_decoder__sci_write(SCI_VOL, 0x2020);
-    fprintf("volume: %i", volume_level);
-  } else if (volume_level == 6) {
-    MP3_decoder__sci_write(SCI_VOL, 0x2525);
-    fprintf("volume: %i", volume_level);
-  } else if (volume_level == 5) {
-    MP3_decoder__sci_write(SCI_VOL, 0x3030);
-    fprintf("volume: %i", volume_level);
-  } else if (volume_level == 4) {
-    MP3_decoder__sci_write(SCI_VOL, 0x3535);
-    fprintf("volume: %i", volume_level);
-  } else if (volume_level == 3) {
-    MP3_decoder__sci_write(SCI_VOL, 0x4040);
-    fprintf("volume: %i", volume_level);
-  } else if (volume_level == 2) {
-    MP3_decoder__sci_write(SCI_VOL, 0x4545);
-    fprintf("volume: %i", volume_level);
-  } else if (volume_level == 1) {
-    MP3_decoder__sci_write(SCI_VOL, 0xFEFE);
-    fprintf("volume: %i", volume_level);
+  if (xSemaphoreTake(Decoder_Mutex, portMAX_DELAY)) {
+    vTaskDelay(10);
+    if (volume_level == 8) {
+      MP3_decoder__sci_write(VOLUME, 0x1010);
+      fprintf("volume: %i", volume_level);
+    } else if (volume_level == 7) {
+      MP3_decoder__sci_write(VOLUME, 0x2020);
+      fprintf("volume: %i", volume_level);
+    } else if (volume_level == 6) {
+      MP3_decoder__sci_write(VOLUME, 0x2525);
+      fprintf("volume: %i", volume_level);
+    } else if (volume_level == 5) {
+      MP3_decoder__sci_write(VOLUME, 0x3030);
+      fprintf("volume: %i", volume_level);
+    } else if (volume_level == 4) {
+      MP3_decoder__sci_write(VOLUME, 0x3535);
+      fprintf("volume: %i", volume_level);
+    } else if (volume_level == 3) {
+      MP3_decoder__sci_write(VOLUME, 0x4040);
+      fprintf("volume: %i", volume_level);
+    } else if (volume_level == 2) {
+      MP3_decoder__sci_write(VOLUME, 0x4545);
+      fprintf("volume: %i", volume_level);
+    } else if (volume_level == 1) {
+      MP3_decoder__sci_write(VOLUME, 0xFEFE);
+      fprintf("volume: %i", volume_level);
+    }
+    vTaskDelay(10);
+    xSemaphoreGive(Decoder_Mutex);
   }
 }
