@@ -50,11 +50,51 @@ void lcd__initialize(void) {
   special_command(0x08 | 0x04); // turn display on
   special_command(0x04 | 0x02); // set the entry mode
   lcd_clear();
-  print_to_screen("the beatles");
+  println_to_screen("the beatles");
 }
 
-void print_to_screen(char *str) {
+void println_to_screen(char *str) {
   for (int i = 0; i < strlen(str); i++) {
     Uart_Driver__Polled_Put(Uart, str[i]); // send byte to uart pin
   }
+
+  for (int i = strlen(str); i < 20; i++) {
+    Uart_Driver__Polled_Put(Uart, " ");
+  }
+}
+
+void print_song_list(size_t song_number, int volume) {
+  char song1[20];
+  char song2[20];
+  char song3[20];
+  int num = song_list__get_item_count();
+  int number_of_songs_left = num - song_number;
+  char buffer[20];
+
+  if (number_of_songs_left == 1) {
+    strcpy(song1, song_list__get_name_for_item(song_number));
+  } else if (number_of_songs_left == 2) {
+    strcpy(song1, song_list__get_name_for_item(song_number));
+    strcpy(song2, song_list__get_name_for_item(song_number + 1));
+  } else {
+    strcpy(song1, song_list__get_name_for_item(song_number));
+    strcpy(song2, song_list__get_name_for_item(song_number + 1));
+    strcpy(song3, song_list__get_name_for_item(song_number + 2));
+  }
+
+  sprintf(buffer, "> %s", song1);
+  printlm_to_screen(buffer);
+
+  if (number_of_songs_left > 1) {
+    sprintf(buffer, "  %s", song2);
+    println_to_screen(buffer);
+  }
+
+  if (number_of_songs_left > 2) {
+    sprintf(buffer, "  %s", song3);
+    println_to_screen(buffer);
+  }
+
+  sprintf(buffer, "V = %d", volume);
+  println_to_screen(buffer);
 }
