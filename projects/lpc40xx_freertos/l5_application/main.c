@@ -16,8 +16,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #define VOLUME 0x0B
-#define volume_up gpio__construct_as_input(1, 10)
-#define volume_down gpio__construct_as_input(1, 14)
 #define play_pause gpio__construct_as_input(1, 19)
 
 xTaskHandle Player;
@@ -26,15 +24,22 @@ xTaskHandle Player;
 typedef char songname_t[16]; // not quite sure what the purpose of this is, im prettu sure its used in app_cli.c
 typedef char songbyte_t[512];
 void Play_Pause_Button(void *p);
-void Volume_Control(void *p);
+// void Volume_Control(void *p);
+void volumedecrease_isr(void);
+void volumeincrease_isr(void);
 void mp3_reader_task(void *p);
 void mp3_player_task(void *p);
 void volumeControl(bool higher, bool init);
+void volumeup_task(void *p);
+void volumedwn_task(void *p);
 QueueHandle_t Q_songname;
 QueueHandle_t Q_songdata;
 SemaphoreHandle_t Decoder_Mutex;
+SemaphoreHandle_t volumeincrease_semaphore;
+SemaphoreHandle_t volumedecrease_semaphore;
 
 uint8_t volume_level = 5;
+MP3_decoder__sci_write(VOLUME, 0x3030)
 
 // flash: python nxp-programmer/flash.py
 
@@ -42,12 +47,18 @@ void main(void) {
   sj2_cli__init();
   mp3_decoder__initialize();
   xTaskCreate(Play_Pause_Button, "Play/Pause", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
-  xTaskCreate(Volume_Control, "Volume Control", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
+  // xTaskCreate(Volume_Control, "Volume Control", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
+  xTaskCreate(volumeincrease_task, "volumeincrease", (1024 * 4) / sizeof(void *), NULL, PRIORITY_MEDIUM, NULL);
+  xTaskCreate(volumedecrease_task, "volumedecrease", (1024 * 4) / sizeof(void *), NULL, PRIORITY_MEDIUM, NULL);
   xTaskCreate(mp3_reader_task, "read-task", (4096 / sizeof(void *)), NULL, PRIORITY_HIGH, NULL);
   xTaskCreate(mp3_player_task, "play-task", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, &Player);
   Q_songname = xQueueCreate(1, sizeof(songname_t));
   Decoder_Mutex = xSemaphoreCreateMutex();
+  volumedecrease_semaphore = xSemaphoreCreateBinary();
+  volumeincrease_semaphore = xSemaphoreCreateBinary();
   Q_songdata = xQueueCreate(1, 512);
+  gpio0__attach_interrupt(29, GPIO_INTR__FALLING_EDGE, volumeincrease_isr);
+  gpio0__attach_interrupt(30, GPIO_INTR__FALLING_EDGE, volumedecrease_isr);
 
   vTaskStartScheduler();
 }
@@ -191,5 +202,25 @@ void volumeControl(bool higher, bool init) {
     }
     vTaskDelay(10);
     xSemaphoreGive(Decoder_Mutex);
+  }
+}
+
+void volumeincrease_isr(void) { xSemaphoreGiveFromISR(increase_semaphore, NULL); }
+void volumedecrease_isr(void) { xSemaphoreGiveFromISR(decrease_semaphore, NULL); }
+
+void volumeincrease_task(void *p) {
+  while (1) {
+    if (xSemaphoreTake(volumeincrease_semaphore, portMAX_DELAY)) {
+      volumeControl(true, false);}
+    }
+  }
+}
+void volumedecrease_task(void *p) {
+  while (1) {
+    if (xSemaphoreTake(volumedecrease_semaphore, portMAX_DELAY)) {
+      // read current volume
+      volumeControl(false, false);
+      }
+    }
   }
 }
