@@ -1,4 +1,5 @@
 #pragma once
+#include "song_list.h"
 #include <stdint.h>
 
 extern const uint8_t lcd_rows;
@@ -6,7 +7,7 @@ extern const uint8_t lcd_columns;
 
 void lcd__initialize(void);
 
-void print_to_screen(char *str);
+void println_to_screen(char *str);
 
 void lcd_clear(void);
 
