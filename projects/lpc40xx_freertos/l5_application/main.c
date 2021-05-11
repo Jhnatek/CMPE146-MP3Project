@@ -74,11 +74,9 @@ void mp3_reader_task(void *p) {
   while (true) {
     if (xQueueReceive(Q_songname, &name, portMAX_DELAY)) {
       file = f_open(&songFile, name, FA_READ);
-      fprintf(stderr, "file %d\n", file);
       if (FR_OK == file) {
         while (!f_eof(&songFile)) {
           f_read(&songFile, bytes_512, 512, &byte_reader);
-          fprintf(stderr, "reading file \n");
           xQueueSend(Q_songdata, &bytes_512, portMAX_DELAY);
         }
         f_close(&songFile);
@@ -100,7 +98,6 @@ void mp3_player_task(void *p) {
       // fprintf(stderr, "%x", bytes_512[i]); used for testing milestone
       uint8_t alternate_status = 1;
       while (!mp3_decoder__needs_data()) { // need to make this
-        fprintf(stderr, "%x", bytes_512[i]);
       }
       if (xSemaphoreTake(Decoder_Mutex, portMAX_DELAY)) {
         // fprintf(stderr, "Sending to decoder:\n");
