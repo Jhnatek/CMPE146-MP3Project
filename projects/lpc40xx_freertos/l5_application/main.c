@@ -25,6 +25,7 @@ xTaskHandle Player;
 typedef char songname_t[16]; // not quite sure what the purpose of this is, im prettu sure its used in app_cli.c
 typedef char songbyte_t[512];
 void Play_Pause_Button(void *p);
+void gpio_interrupt(void);
 // void Volume_Control(void *p);
 void volumedecrease_isr(void);
 void volumeincrease_isr(void);
@@ -39,12 +40,17 @@ SemaphoreHandle_t Decoder_Mutex;
 SemaphoreHandle_t volumeincrease_semaphore;
 SemaphoreHandle_t volumedecrease_semaphore;
 
+
 uint8_t volume_level = 5;
 // MP3_decoder__sci_write(VOLUME, 0x3030)
 
 // flash: python nxp-programmer/flash.py
 
 void main(void) {
+  
+  volumedecrease_semaphore = xSemaphoreCreateBinary();
+  gpio__attach_interrupt(0, 30, GPIO_INTR__FALLING_EDGE, volumedecrease_isr);
+  LPC_GPIO0->DIR &= ~(1 << 30);
   sj2_cli__init();
   mp3_decoder__initialize();
   xTaskCreate(Play_Pause_Button, "Play/Pause", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
@@ -55,11 +61,9 @@ void main(void) {
   xTaskCreate(mp3_player_task, "play-task", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, &Player);
   Q_songname = xQueueCreate(1, sizeof(songname_t));
   Decoder_Mutex = xSemaphoreCreateMutex();
-  volumedecrease_semaphore = xSemaphoreCreateBinary();
   volumeincrease_semaphore = xSemaphoreCreateBinary();
   Q_songdata = xQueueCreate(1, 512);
-  gpio__attach_interrupt(0, 29, GPIO_INTR__FALLING_EDGE, volumeincrease_isr);
-  gpio__attach_interrupt(0, 30, GPIO_INTR__FALLING_EDGE, volumedecrease_isr);
+  // gpio__attach_interrupt(0, 29, GPIO_INTR__FALLING_EDGE, volumeincrease_isr);
 
   vTaskStartScheduler();
 }
@@ -219,8 +223,14 @@ void volumeincrease_task(void *p) {
 void volumedecrease_task(void *p) {
   while (1) {
     if (xSemaphoreTake(volumedecrease_semaphore, portMAX_DELAY)) {
+      fprintf("interrupt detected");
       volumeControl(false, false);
     }
   }
   xSemaphoreGive(volumedecrease_semaphore);
+}
+void gpio_interrupt(void) {
+  fprintf(stderr, "Interrupt has been received!!"); // prints that interrupt has been detected
+  gpio0__interrupt_dispatcher0();                   // locates interrupt pin
+  LPC_GPIOINT->IO0IntClr |= (1 << 30);
 }
