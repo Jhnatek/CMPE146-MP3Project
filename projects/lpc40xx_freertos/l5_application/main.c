@@ -223,7 +223,7 @@ void volumeincrease_task(void *p) {
 void volumedecrease_task(void *p) {
   while (1) {
     if (xSemaphoreTake(volumedecrease_semaphore, portMAX_DELAY)) {
-      fprintf("interrupt detected");
+      fprintf(stderr,"interrupt detected");
       volumeControl(false, false);
     }
   }
