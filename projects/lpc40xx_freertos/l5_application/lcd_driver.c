@@ -54,17 +54,22 @@ void lcd__initialize(void) {
 }
 
 void println_to_screen(char *str) {
-  for (int i = 0; i < strlen(str); i++) {
+  int size = strlen(str);
+  if (size > 20)
+    size = 20; // One line on screen can only hold 20 characters
+
+  for (int i = 0; i < size; i++) {
     Uart_Driver__Polled_Put(Uart, str[i]); // send byte to uart pin
   }
 
-  for (int i = strlen(str); i < 20; i++) {
-    Uart_Driver__Polled_Put(Uart, " ");
+  for (int i = size; i < 20; i++) {
+    Uart_Driver__Polled_Put(Uart, " "); // Fill line if not full
   }
 }
 
 void print_song_list(size_t song_number, int volume) {
   lcd_clear();
+  // Maybe change these to songx[100] if errors happen
   char song1[20];
   char song2[20];
   char song3[20];
@@ -73,28 +78,27 @@ void print_song_list(size_t song_number, int volume) {
   char buffer[20];
 
   if (number_of_songs_left == 1) {
-    sprintf(song1,"%s", song_list__get_name_for_item(song_number));
+    sprintf(song1, "%s", song_list__get_name_for_item(song_number));
+    sprintf(song2, "                  ");
+    sprintf(song3, "                  ");
   } else if (number_of_songs_left == 2) {
-    sprintf(song1,"%s",  song_list__get_name_for_item(song_number));
-    sprintf(song2,"%s",  song_list__get_name_for_item(song_number + 1));
+    sprintf(song1, "%s", song_list__get_name_for_item(song_number));
+    sprintf(song2, "%s", song_list__get_name_for_item(song_number + 1));
+    sprintf(song3, "                  ");
   } else {
-    sprintf(song1,"%s",  song_list__get_name_for_item(song_number));
-    sprintf(song2,"%s",  song_list__get_name_for_item(song_number + 1));
-    sprintf(song3,"%s",  song_list__get_name_for_item(song_number + 2));
+    sprintf(song1, "%s", song_list__get_name_for_item(song_number));
+    sprintf(song2, "%s", song_list__get_name_for_item(song_number + 1));
+    sprintf(song3, "%s", song_list__get_name_for_item(song_number + 2));
   }
 
   sprintf(buffer, "> %s", song1);
-  printlm_to_screen(buffer);
+  println_to_screen(buffer);
 
-  if (number_of_songs_left > 1) {
-    sprintf(buffer, "  %s", song2);
-    println_to_screen(buffer);
-  }
+  sprintf(buffer, "  %s", song2);
+  println_to_screen(buffer);
 
-  if (number_of_songs_left > 2) {
-    sprintf(buffer, "  %s", song3);
-    println_to_screen(buffer);
-  }
+  sprintf(buffer, "  %s", song3);
+  println_to_screen(buffer);
 
   sprintf(buffer, "V = %d", volume);
   println_to_screen(buffer);
