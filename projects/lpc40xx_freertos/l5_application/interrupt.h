@@ -3,6 +3,12 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+typedef void (*function_pointer_t)(void);
+typedef enum {
+  GPIO_INTR__FALLING_EDGE,
+  GPIO_INTR__RISING_EDGE,
+} gpio_interrupt_e;
+
 void gpio__attach_interrupt(uint32_t port, uint32_t pin, gpio_interrupt_e interrupt_type, function_pointer_t callback);
 void gpio0__attach_interrupt(uint32_t pin, gpio_interrupt_e interrupt_type, function_pointer_t callback);
 void gpio1__attach_interrupt(uint32_t pin, gpio_interrupt_e interrupt_type, function_pointer_t callback);

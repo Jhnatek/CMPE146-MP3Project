@@ -10,9 +10,9 @@
 #include "decoder.h"
 #include "ff.h"
 #include "gpio.h"
+#include "interrupt.h"
 #include "periodic_scheduler.h"
 #include "semphr.h"
-#include "interrupt.h"
 #include "sj2_cli.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -31,8 +31,8 @@ void volumeincrease_isr(void);
 void mp3_reader_task(void *p);
 void mp3_player_task(void *p);
 void volumeControl(bool higher, bool init);
-void volumeup_task(void *p);
-void volumedwn_task(void *p);
+void volumeincrease_task(void *p);
+void volumedecrease_task(void *p);
 QueueHandle_t Q_songname;
 QueueHandle_t Q_songdata;
 SemaphoreHandle_t Decoder_Mutex;
@@ -40,7 +40,7 @@ SemaphoreHandle_t volumeincrease_semaphore;
 SemaphoreHandle_t volumedecrease_semaphore;
 
 uint8_t volume_level = 5;
-MP3_decoder__sci_write(VOLUME, 0x3030)
+// MP3_decoder__sci_write(VOLUME, 0x3030)
 
 // flash: python nxp-programmer/flash.py
 
@@ -58,8 +58,8 @@ void main(void) {
   volumedecrease_semaphore = xSemaphoreCreateBinary();
   volumeincrease_semaphore = xSemaphoreCreateBinary();
   Q_songdata = xQueueCreate(1, 512);
-  gpio0__attach_interrupt(29, GPIO_INTR__FALLING_EDGE, volumeincrease_isr);
-  gpio0__attach_interrupt(30, GPIO_INTR__FALLING_EDGE, volumedecrease_isr);
+  gpio__attach_interrupt(0, 29, GPIO_INTR__FALLING_EDGE, volumeincrease_isr);
+  gpio__attach_interrupt(0, 30, GPIO_INTR__FALLING_EDGE, volumedecrease_isr);
 
   vTaskStartScheduler();
 }
@@ -204,23 +204,23 @@ void volumeControl(bool higher, bool init) {
   }
 }
 
-void volumeincrease_isr(void) { xSemaphoreGiveFromISR(increase_semaphore, NULL); }
-void volumedecrease_isr(void) { xSemaphoreGiveFromISR(decrease_semaphore, NULL); }
+void volumeincrease_isr(void) { xSemaphoreGiveFromISR(volumeincrease_semaphore, NULL); }
+void volumedecrease_isr(void) { xSemaphoreGiveFromISR(volumedecrease_semaphore, NULL); }
 
 void volumeincrease_task(void *p) {
   while (1) {
     if (xSemaphoreTake(volumeincrease_semaphore, portMAX_DELAY)) {
       volumeControl(true, false);
-      }
     }
-    xSemaphoreGive(volumeincrease);
   }
+  xSemaphoreGive(volumeincrease_semaphore);
+}
 
 void volumedecrease_task(void *p) {
   while (1) {
     if (xSemaphoreTake(volumedecrease_semaphore, portMAX_DELAY)) {
       volumeControl(false, false);
-      }
     }
-    xSemaphoreGive(volumedecrease_semaphore);
   }
+  xSemaphoreGive(volumedecrease_semaphore);
+}
