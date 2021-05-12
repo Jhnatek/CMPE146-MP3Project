@@ -114,15 +114,21 @@ bool check_down_button() {
 
 void screen_control_task(void *p) {
   song_number = 0;
+  bool changed = false;
 
   while (1) {
     if (check_up_button && song_number + 1 != song_list__get_item_count()) {
       song_number++;
+      changed = true;
     } else if (check_down_button && song_number - 1 >= 0) {
       song_number--;
+      changed = true;
     }
-
-    print_song_list(song_number, volume);
+    
+    if(changed) {
+    print_song_list(song_number,volume);
+    }
     vTaskDelay(10);
+    changed = false;
   }
 }
