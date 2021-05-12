@@ -12,6 +12,7 @@
 #include "gpio.h"
 #include "periodic_scheduler.h"
 #include "semphr.h"
+#include "interrupt.h"
 #include "sj2_cli.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -132,38 +133,39 @@ void Play_Pause_Button(void *p) {
   }
 }
 
-void Volume_Control(void *p) {
-  // Volume up pin: 10 port 1
-  // Volume down pin: 14 port 1
-  bool increase = false;
-  bool decrease = false;
-  while (1) {
-    vTaskDelay(10);
-    if (gpio__get(volume_up)) {
-      while (gpio__get(volume_up)) {
-      }
-      increase = true;
-    } else if (gpio__get(volume_down)) {
-      while (gpio__get(volume_down)) {
-      }
-      decrease = true;
-    } else {
-      if (!gpio__get(volume_up)) {
-        increase = false;
-      } else if (!gpio__get(volume_down)) {
-        decrease = false;
-      }
-    }
+// void Volume_Control(void *p) {
+//   // Volume up pin: 10 port 1
+//   // Volume down pin: 14 port 1
+//   bool increase = false;
+//   bool decrease = false;
+//   while (1) {
+//     vTaskDelay(10);
+//     if (gpio__get(volume_up)) {
+//       while (gpio__get(volume_up)) {
+//       }
+//       increase = true;
+//     } else if (gpio__get(volume_down)) {
+//       while (gpio__get(volume_down)) {
+//       }
+//       decrease = true;
+//     } else {
+//       if (!gpio__get(volume_up)) {
+//         increase = false;
+//       } else if (!gpio__get(volume_down)) {
+//         decrease = false;
+//       }
+//     }
 
-    if (increase) {
-      volumeControl(true, false);
-      increase = false;
-    } else if (decrease) {
-      volumeControl(false, false);
-      decrease = false;
-    }
-  }
-}
+//     if (increase) {
+//       volumeControl(true, false);
+//       increase = false;
+//     } else if (decrease) {
+//       volumeControl(false, false);
+//       decrease = false;
+//     }
+//   }
+// }
+
 void volumeControl(bool higher, bool init) {
   if (higher && volume_level < 8 && !init) {
     volume_level++;
@@ -208,16 +210,17 @@ void volumedecrease_isr(void) { xSemaphoreGiveFromISR(decrease_semaphore, NULL);
 void volumeincrease_task(void *p) {
   while (1) {
     if (xSemaphoreTake(volumeincrease_semaphore, portMAX_DELAY)) {
-      volumeControl(true, false);}
+      volumeControl(true, false);
+      }
     }
+    xSemaphoreGive(volumeincrease);
   }
-}
+
 void volumedecrease_task(void *p) {
   while (1) {
     if (xSemaphoreTake(volumedecrease_semaphore, portMAX_DELAY)) {
-      // read current volume
       volumeControl(false, false);
       }
     }
+    xSemaphoreGive(volumedecrease_semaphore);
   }
-}
