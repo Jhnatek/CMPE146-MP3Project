@@ -124,9 +124,9 @@ void screen_control_task(void *p) {
       song_number--;
       changed = true;
     }
-    
-    if(changed) {
-    print_song_list(song_number,volume);
+
+    if (changed) {
+      print_song_list(song_number, volume);
     }
     vTaskDelay(10);
     changed = false;
