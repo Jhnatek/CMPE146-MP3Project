@@ -231,6 +231,7 @@ void volumedecrease_task(void *p) {
 }
 void gpio_interrupt(void) {
   fprintf(stderr, "Interrupt has been received!!"); // prints that interrupt has been detected
-  gpio0__interrupt_dispatcher0();                   // locates interrupt pin
+  gpio__interrupt_dispatcher();                   // locates interrupt pin
+  xSemaphoreGiveFromISR(volumedecrease_semaphore, NULL);
   LPC_GPIOINT->IO0IntClr |= (1 << 30);
 }
