@@ -217,7 +217,6 @@ void volumeincrease_task(void *p) {
       volumeControl(true, false);
     }
   }
-  xSemaphoreGive(volumeincrease_semaphore);
 }
 
 void volumedecrease_task(void *p) {
@@ -227,7 +226,6 @@ void volumedecrease_task(void *p) {
       volumeControl(false, false);
     }
   }
-  xSemaphoreGive(volumedecrease_semaphore);
 }
 void gpio_interrupt(void) {
   fprintf(stderr, "Interrupt has been received!!"); // prints that interrupt has been detected
