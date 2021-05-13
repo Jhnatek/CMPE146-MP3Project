@@ -56,7 +56,7 @@ void main(void) {
   xTaskCreate(Play_Pause_Button, "Play/Pause", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   // xTaskCreate(Volume_Control, "Volume Control", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   xTaskCreate(volumeincrease_task, "volumeincrease", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
-  xTaskCreate(volumedecrease_task, "volumedecrease", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
+  // xTaskCreate(volumedecrease_task, "volumedecrease", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   xTaskCreate(mp3_reader_task, "read-task", (4096 / sizeof(void *)), NULL, PRIORITY_HIGH, NULL);
   xTaskCreate(mp3_player_task, "play-task", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, &Player);
   Q_songname = xQueueCreate(1, sizeof(songname_t));
@@ -221,17 +221,19 @@ void volumeincrease_task(void *p) {
 }
 
 void volumedecrease_task(void *p) {
-  while (1) {
+  while (true) {
     if (xSemaphoreTake(volumedecrease_semaphore, portMAX_DELAY)) {
       fprintf(stderr, "interrupt detected");
       volumeControl(false, false);
       break;
     }
   }
+  xSemaphoreGive(volumedecrease_semaphore);
 }
 void gpio_interrupt(void) {
   fprintf(stderr, "Interrupt has been received!!"); // prints that interrupt has been detected
   gpio__interrupt_dispatcher();                     // locates interrupt pin
   xSemaphoreGiveFromISR(volumedecrease_semaphore, NULL);
+  volumedecrease_task;
   LPC_GPIOINT->IO0IntClr |= (1 << 30);
 }
