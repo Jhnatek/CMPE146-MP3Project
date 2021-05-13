@@ -77,4 +77,3 @@ void gpio2__interrupt_dispatcher(void) {
   attached_user_handler();
   clear_pin_interrupt(pin_that_generated_interrupt);
 }
-

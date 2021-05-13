@@ -40,17 +40,17 @@ SemaphoreHandle_t Decoder_Mutex;
 SemaphoreHandle_t volumeincrease_semaphore;
 SemaphoreHandle_t volumedecrease_semaphore;
 
-
 uint8_t volume_level = 5;
 // MP3_decoder__sci_write(VOLUME, 0x3030)
 
 // flash: python nxp-programmer/flash.py
 
 void main(void) {
-  
+
   volumedecrease_semaphore = xSemaphoreCreateBinary();
   gpio__attach_interrupt(0, 30, GPIO_INTR__FALLING_EDGE, volumedecrease_isr);
   LPC_GPIO0->DIR &= ~(1 << 30);
+  NVIC_EnableIRQ(GPIO_IRQn);
   sj2_cli__init();
   mp3_decoder__initialize();
   xTaskCreate(Play_Pause_Button, "Play/Pause", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
@@ -223,7 +223,7 @@ void volumeincrease_task(void *p) {
 void volumedecrease_task(void *p) {
   while (1) {
     if (xSemaphoreTake(volumedecrease_semaphore, portMAX_DELAY)) {
-      fprintf(stderr,"interrupt detected");
+      fprintf(stderr, "interrupt detected");
       volumeControl(false, false);
     }
   }
@@ -231,7 +231,7 @@ void volumedecrease_task(void *p) {
 }
 void gpio_interrupt(void) {
   fprintf(stderr, "Interrupt has been received!!"); // prints that interrupt has been detected
-  gpio__interrupt_dispatcher();                   // locates interrupt pin
+  gpio__interrupt_dispatcher();                     // locates interrupt pin
   xSemaphoreGiveFromISR(volumedecrease_semaphore, NULL);
   LPC_GPIOINT->IO0IntClr |= (1 << 30);
 }
