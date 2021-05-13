@@ -11,6 +11,7 @@
 #include "ff.h"
 #include "gpio.h"
 #include "interrupt.h"
+#include "lpc_peripherals.h"
 #include "periodic_scheduler.h"
 #include "semphr.h"
 #include "sj2_cli.h"
@@ -25,7 +26,7 @@ xTaskHandle Player;
 typedef char songname_t[16]; // not quite sure what the purpose of this is, im prettu sure its used in app_cli.c
 typedef char songbyte_t[512];
 void Play_Pause_Button(void *p);
-void gpio_interrupt(void);
+// void gpio_interrupt(void);
 // void Volume_Control(void *p);
 void volumedecrease_isr(void);
 void volumeincrease_isr(void);
@@ -46,24 +47,24 @@ uint8_t volume_level = 5;
 // flash: python nxp-programmer/flash.py
 
 void main(void) {
-
   volumedecrease_semaphore = xSemaphoreCreateBinary();
+  lpc_peripheral__enable_interrupt(LPC_PERIPHERAL__GPIO, gpio__interrupt_dispatcher, NULL);
   gpio__attach_interrupt(0, 30, GPIO_INTR__FALLING_EDGE, volumedecrease_task);
-  LPC_GPIO0->DIR &= ~(1 << 30);
+  // LPC_GPIO0->DIR &= ~(1 << 30);
   NVIC_EnableIRQ(GPIO_IRQn);
   sj2_cli__init();
   mp3_decoder__initialize();
   xTaskCreate(Play_Pause_Button, "Play/Pause", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   // xTaskCreate(Volume_Control, "Volume Control", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
-  xTaskCreate(volumeincrease_task, "volumeincrease", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
-  // xTaskCreate(volumedecrease_task, "volumedecrease", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
+  // xTaskCreate(volumeincrease_task, "volumeincrease", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
+  xTaskCreate(volumedecrease_task, "volumedecrease", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   xTaskCreate(mp3_reader_task, "read-task", (4096 / sizeof(void *)), NULL, PRIORITY_HIGH, NULL);
   xTaskCreate(mp3_player_task, "play-task", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, &Player);
   Q_songname = xQueueCreate(1, sizeof(songname_t));
   Decoder_Mutex = xSemaphoreCreateMutex();
   volumeincrease_semaphore = xSemaphoreCreateBinary();
   Q_songdata = xQueueCreate(1, 512);
-  // gpio__attach_interrupt(0, 29, GPIO_INTR__FALLING_EDGE, volumeincrease_isr);
+  gpio__attach_interrupt(0, 29, GPIO_INTR__FALLING_EDGE, volumeincrease_isr);
 
   vTaskStartScheduler();
 }
@@ -177,7 +178,6 @@ void volumeControl(bool higher, bool init) {
     volume_level--;
   }
   if (xSemaphoreTake(Decoder_Mutex, portMAX_DELAY)) {
-    vTaskDelay(10);
     if (volume_level == 8) {
       MP3_decoder__sci_write(VOLUME, 0x1010);
       fprintf("volume: %i", volume_level);
@@ -203,7 +203,6 @@ void volumeControl(bool higher, bool init) {
       MP3_decoder__sci_write(VOLUME, 0xFEFE);
       fprintf("volume: %i", volume_level);
     }
-    vTaskDelay(10);
     xSemaphoreGive(Decoder_Mutex);
   }
 }
@@ -230,10 +229,10 @@ void volumedecrease_task(void *p) {
   }
   xSemaphoreGive(volumedecrease_semaphore);
 }
-void gpio_interrupt(void) {
-  fprintf(stderr, "Interrupt has been received!!"); // prints that interrupt has been detected
-  gpio__interrupt_dispatcher();                     // locates interrupt pin
-  xSemaphoreGiveFromISR(volumedecrease_semaphore, NULL);
-  volumedecrease_task;
-  LPC_GPIOINT->IO0IntClr |= (1 << 30);
-}
+// void gpio_interrupt(void) {
+//   fprintf(stderr, "Interrupt has been received!!"); // prints that interrupt has been detected
+//   gpio__interrupt_dispatcher();                     // locates interrupt pin
+//   xSemaphoreGiveFromISR(volumedecrease_semaphore, NULL);
+//   volumedecrease_task;
+//   LPC_GPIOINT->IO0IntClr |= (1 << 30);
+// }

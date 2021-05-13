@@ -11,6 +11,7 @@
         "type_traits": "c",
         "*.def": "c",
         "memory_resource": "c",
-        "scoped_allocator": "c"
+        "scoped_allocator": "c",
+        "gpio.h": "c"
     }
 }
