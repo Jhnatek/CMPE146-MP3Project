@@ -48,7 +48,7 @@ uint8_t volume_level = 5;
 void main(void) {
 
   volumedecrease_semaphore = xSemaphoreCreateBinary();
-  gpio__attach_interrupt(0, 30, GPIO_INTR__FALLING_EDGE, volumedecrease_isr);
+  gpio__attach_interrupt(0, 30, GPIO_INTR__FALLING_EDGE, volumedecrease_task);
   LPC_GPIO0->DIR &= ~(1 << 30);
   NVIC_EnableIRQ(GPIO_IRQn);
   sj2_cli__init();
