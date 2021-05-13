@@ -172,11 +172,14 @@ void Play_Pause_Button(void *p) {
 // }
 
 void volumeControl(bool higher, bool init) {
+
+  fprintf(stderr,"GOT INTO VOLUMECONTROL\n");
   if (higher && volume_level < 8 && !init) {
     volume_level++;
   } else if (!higher && volume_level > 1 && !init) {
     volume_level--;
   }
+  fprintf(stderr,"GOT PAST IF CONDITIONS\n");
   if (xSemaphoreTake(Decoder_Mutex, portMAX_DELAY)) {
     switch (volume_level) {
     case 8:
@@ -215,6 +218,7 @@ void volumeControl(bool higher, bool init) {
       MP3_decoder__sci_write(VOLUME, 0x3535);
       // fprintf("volume: %i", volume_level);
     }
+    fprintf(stderr,"GOT PAST SWITCHES\n");
     xSemaphoreGive(Decoder_Mutex);
   }
 }
@@ -234,9 +238,11 @@ void volumedecrease_isr(void) { xSemaphoreGiveFromISR(volumedecrease_semaphore, 
 void volumedecrease_task(void *p) {
   while (true) {
     if (xSemaphoreTake(volumedecrease_semaphore, portMAX_DELAY)) {
+      vTaskDelay(10);
       fprintf(stderr, "interrupt detected");
       volumeControl(false, false);
       break;
+      vTaskDelay(10);
     }
   }
   xSemaphoreGive(volumedecrease_semaphore);
