@@ -241,7 +241,7 @@ void volumedecrease_task(void *p) {
       vTaskDelay(10);
       fprintf(stderr, "interrupt detected");
       volumeControl(false, false);
-      break;
+      // break;
       vTaskDelay(10);
     }
   }
