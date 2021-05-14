@@ -18,7 +18,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #define VOLUME 0x0B
-#define play_pause gpio__construct_as_input(1, 19)
+#define play_pause gpio__construct_as_input(2, 2)
 
 xTaskHandle Player;
 // LPC_IOCON->P0_8 &= ~(3 << 3);
@@ -47,6 +47,7 @@ uint8_t volume_level = 5;
 // flash: python nxp-programmer/flash.py
 
 void main(void) {
+  gpio__enable_pull_down_resistors(play_pause);
   volumedecrease_semaphore = xSemaphoreCreateBinary();
   volumeincrease_semaphore = xSemaphoreCreateBinary();
   lpc_peripheral__enable_interrupt(LPC_PERIPHERAL__GPIO, gpio__interrupt_dispatcher, NULL);
