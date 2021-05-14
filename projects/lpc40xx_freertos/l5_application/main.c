@@ -18,16 +18,17 @@
 #include <stdbool.h>
 #include <stdint.h>
 #define VOLUME 0x0B
-#define play_pause gpio__construct_as_input(1, 19)
+#define play_pause gpio__construct_as_input(2, 2)
+// save 2.8 and 0.17 for volume up and down
+// the other ports you can use: (note that there are only 8 swtiches, i would evenutlaly like a funciton that will
+// switch between bass, treble, and volume, and then we can adjust those using volume+/-) 2.2, 2.5, 2.7, 2.9 2.4, 2.6,
+// !2.8, !0.17
+void pull_down_switches(void);
 
 xTaskHandle Player;
-// LPC_IOCON->P0_8 &= ~(3 << 3);
-// LPC_IOCON->P0_8 |= (1 << 3);
-typedef char songname_t[16]; // not quite sure what the purpose of this is, im prettu sure its used in app_cli.c
+typedef char songname_t[16]; // not quite sure what the purpose of this is, im pretty sure naveen worked on this
 typedef char songbyte_t[512];
 void Play_Pause_Button(void *p);
-// void gpio_interrupt(void);
-// void Volume_Control(void *p);
 void volumedecrease_isr(void);
 void volumeincrease_isr(void);
 void mp3_reader_task(void *p);
@@ -47,6 +48,7 @@ uint8_t volume_level = 5;
 // flash: python nxp-programmer/flash.py
 
 void main(void) {
+  pull_down_switches();
   volumedecrease_semaphore = xSemaphoreCreateBinary();
   volumeincrease_semaphore = xSemaphoreCreateBinary();
   lpc_peripheral__enable_interrupt(LPC_PERIPHERAL__GPIO, gpio__interrupt_dispatcher, NULL);
@@ -258,3 +260,7 @@ void volumedecrease_task(void *p) {
 //   volumedecrease_task;
 //   LPC_GPIOINT->IO0IntClr |= (1 << 30);
 // }
+
+void pull_down_switches(void) {
+  gpio__enable_pull_down_resistors(play_pause); // Josh needs this because the buttons are active high
+}
