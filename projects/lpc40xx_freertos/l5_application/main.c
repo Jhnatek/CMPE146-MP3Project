@@ -29,11 +29,11 @@ void Play_Pause_Button(void *p);
 // void gpio_interrupt(void);
 // void Volume_Control(void *p);
 void volumedecrease_isr(void);
-// void volumeincrease_isr(void);
+void volumeincrease_isr(void);
 void mp3_reader_task(void *p);
 void mp3_player_task(void *p);
 void volumeControl(bool higher, bool init);
-// void volumeincrease_task(void *p);
+void volumeincrease_task(void *p);
 void volumedecrease_task(void *p);
 QueueHandle_t Q_songname;
 QueueHandle_t Q_songdata;
@@ -48,7 +48,9 @@ uint8_t volume_level = 5;
 
 void main(void) {
   volumedecrease_semaphore = xSemaphoreCreateBinary();
+  volumeincrease_semaphore = xSemaphoreCreateBinary();
   lpc_peripheral__enable_interrupt(LPC_PERIPHERAL__GPIO, gpio__interrupt_dispatcher, NULL);
+  gpio__attach_interrupt(0, 29, GPIO_INTR__FALLING_EDGE, volumeincrease_isr);
   gpio__attach_interrupt(0, 30, GPIO_INTR__FALLING_EDGE, volumedecrease_isr);
   // LPC_GPIO0->DIR &= ~(1 << 30);
   NVIC_EnableIRQ(GPIO_IRQn);
@@ -56,13 +58,12 @@ void main(void) {
   mp3_decoder__initialize();
   xTaskCreate(Play_Pause_Button, "Play/Pause", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   // xTaskCreate(Volume_Control, "Volume Control", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
-  // xTaskCreate(volumeincrease_task, "volumeincrease", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
+  xTaskCreate(volumeincrease_task, "volumeincrease", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   xTaskCreate(volumedecrease_task, "volumedecrease", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   xTaskCreate(mp3_reader_task, "read-task", (4096 / sizeof(void *)), NULL, PRIORITY_HIGH, NULL);
   xTaskCreate(mp3_player_task, "play-task", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, &Player);
   Q_songname = xQueueCreate(1, sizeof(songname_t));
   Decoder_Mutex = xSemaphoreCreateMutex();
-  // volumeincrease_semaphore = xSemaphoreCreateBinary();
   Q_songdata = xQueueCreate(1, 512);
   // gpio__attach_interrupt(0, 29, GPIO_INTR__FALLING_EDGE, volumeincrease_isr);
 
@@ -223,17 +224,20 @@ void volumeControl(bool higher, bool init) {
   }
 }
 
-// void volumeincrease_isr(void) { xSemaphoreGiveFromISR(volumeincrease_semaphore, NULL); }
+void volumeincrease_isr(void) { xSemaphoreGiveFromISR(volumeincrease_semaphore, NULL); }
 void volumedecrease_isr(void) { xSemaphoreGiveFromISR(volumedecrease_semaphore, NULL); }
 
-// void volumeincrease_task(void *p) {
-//   while (1) {
-//     if (xSemaphoreTake(volumeincrease_semaphore, portMAX_DELAY)) {
-//       volumeControl(true, false);
-//       break;
-//     }
-//   }
-// }
+void volumeincrease_task(void *p) {
+  while (1) {
+    if (xSemaphoreTake(volumeincrease_semaphore, portMAX_DELAY)) {
+      vTaskDelay(10);
+      fprintf(stderr, "interrupt detected");
+      volumeControl(true, false);
+      vTaskDelay(10);
+    }
+  }
+  xSemaphoreGive(volumeincrease_semaphore);
+}
 
 void volumedecrease_task(void *p) {
   while (true) {
