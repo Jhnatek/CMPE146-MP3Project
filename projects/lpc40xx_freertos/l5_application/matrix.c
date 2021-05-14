@@ -32,16 +32,16 @@ Distributed as-is; no warranty is given.
 #define NUM_BTN_ROWS (4)
 #define NUM_COLORS (1)
 #define MAX_DEBOUNCE (3)
-#define btn_column_1 gpio__construct(2, 1)
-#define btn_column_2 gpio__construct(2, 4)
-#define btn_column_3 gpio__construct(2, 6)
-#define btn_column_4 gpio__construct(2, 8)
-#define btn_row_1 gpio__construct(0, 17)
-#define LED_column_1 gpio__construct(2, 0)
-#define LED_column_2 gpio__construct(2, 2)
-#define LED_column_3 gpio__construct(2, 5)
-#define LED_column_4 gpio__construct(2, 7)
-#define LED_row_1 gpio__construct(2, 9)
+#define btn_column_1 gpio__construct_as_output(2, 1)
+#define btn_column_2 gpio__construct_as_output(2, 4)
+#define btn_column_3 gpio__construct_as_output(2, 6)
+#define btn_column_4 gpio__construct_as_output(2, 8)
+#define btn_row_1 gpio__construct_as_input(0, 17)
+#define LED_column_1 gpio__construct_as_output(2, 0)
+#define LED_column_2 gpio__construct_as_output(2, 2)
+#define LED_column_3 gpio__construct_as_output(2, 5)
+#define LED_column_4 gpio__construct_as_output(2, 7)
+#define LED_row_1 gpio__construct_as_output(2, 9)
 // 2.0,2.2,2.5,2.7,2.9
 // 2.1,2.4,2.6,2.8,0.17
 // Global variables
@@ -63,7 +63,7 @@ static void setuppins() {
     // arduino:
     // pinMode(ledcolumnpins[i], OUTPUT);
     // sj2:
-    gpio__set_as_output(ledcolumnpins[i]);
+    // gpio__set_as_output(ledcolumnpins[i]);
     // with nothing selected by default
     // arduino:
     // digitalWrite(ledcolumnpins[i], HIGH);
@@ -73,7 +73,7 @@ static void setuppins() {
 
   // button columns
   for (i = 0; i < NUM_BTN_COLUMNS; i++) {
-    gpio__set_as_output(btncolumnpins[i]);
+    // gpio__set_as_output(btncolumnpins[i]);
     gpio__set(btncolumnpins[i]);
   }
 
@@ -82,7 +82,7 @@ static void setuppins() {
     // arduino:
     // pinMode(btnrowpins[i], INPUT_PULLUP); We dont really have pullup... so i guess just an ordinarry input
     // sj2:
-    gpio__set_as_input(btnrowpins[i]);
+    // gpio__set_as_input(btnrowpins[i]);
   }
 
   // LED drive lines
@@ -90,7 +90,7 @@ static void setuppins() {
     // arduino:
     // pinMode(colorpins[i], OUTPUT);
     // digitalWrite(colorpins[i], LOW);
-    gpio__set_as_output(colorpins[i]);
+    // gpio__set_as_output(colorpins[i]);
     gpio__set(colorpins[i]);
   }
 
