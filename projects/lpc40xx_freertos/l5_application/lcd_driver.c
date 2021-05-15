@@ -73,14 +73,14 @@ void print_song_list(size_t song_number, int volume) {
   char buffer[20];
 
   if (number_of_songs_left == 1) {
-    sprintf(song1,"%s", song_list__get_name_for_item(song_number));
+    sprintf(song1, "%s", song_list__get_name_for_item(song_number));
   } else if (number_of_songs_left == 2) {
-    sprintf(song1,"%s",  song_list__get_name_for_item(song_number));
-    sprintf(song2,"%s",  song_list__get_name_for_item(song_number + 1));
+    sprintf(song1, "%s", song_list__get_name_for_item(song_number));
+    sprintf(song2, "%s", song_list__get_name_for_item(song_number + 1));
   } else {
-    sprintf(song1,"%s",  song_list__get_name_for_item(song_number));
-    sprintf(song2,"%s",  song_list__get_name_for_item(song_number + 1));
-    sprintf(song3,"%s",  song_list__get_name_for_item(song_number + 2));
+    sprintf(song1, "%s", song_list__get_name_for_item(song_number));
+    sprintf(song2, "%s", song_list__get_name_for_item(song_number + 1));
+    sprintf(song3, "%s", song_list__get_name_for_item(song_number + 2));
   }
 
   sprintf(buffer, "> %s", song1);
@@ -99,5 +99,3 @@ void print_song_list(size_t song_number, int volume) {
   sprintf(buffer, "V = %d", volume);
   println_to_screen(buffer);
 }
-
-
