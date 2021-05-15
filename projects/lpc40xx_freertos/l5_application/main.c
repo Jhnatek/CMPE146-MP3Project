@@ -133,7 +133,7 @@ void Play_Pause_Button(void *p) {
     }
     if (pause) {
       vTaskSuspend(Player);
-      fprintf(stderr, "MUSIC PAUSED!");
+      //fprintf(stderr, "MUSIC PAUSED!");
     }
     if (!pause) {
       vTaskResume(Player);
@@ -176,13 +176,13 @@ void Play_Pause_Button(void *p) {
 
 void volumeControl(bool higher, bool init) {
 
-  fprintf(stderr, "GOT INTO VOLUMECONTROL\n");
+  //fprintf(stderr, "GOT INTO VOLUMECONTROL\n");
   if (higher && volume_level < 8 && !init) {
     volume_level++;
   } else if (!higher && volume_level > 1 && !init) {
     volume_level--;
   }
-  fprintf(stderr, "GOT PAST IF CONDITIONS\n");
+  //fprintf(stderr, "GOT PAST IF CONDITIONS\n");
   if (xSemaphoreTake(Decoder_Mutex, portMAX_DELAY)) {
     switch (volume_level) {
     case 8:
@@ -221,7 +221,7 @@ void volumeControl(bool higher, bool init) {
       MP3_decoder__sci_write(VOLUME, 0x3535);
       // fprintf("volume: %i", volume_level);
     }
-    fprintf(stderr, "GOT PAST SWITCHES\n");
+    //fprintf(stderr, "GOT PAST SWITCHES\n");
     xSemaphoreGive(Decoder_Mutex);
   }
 }
@@ -233,7 +233,7 @@ void volumeincrease_task(void *p) {
   while (1) {
     if (xSemaphoreTake(volumeincrease_semaphore, portMAX_DELAY)) {
       vTaskDelay(10);
-      fprintf(stderr, "interrupt detected");
+      //fprintf(stderr, "interrupt detected");
       volumeControl(true, false);
       vTaskDelay(10);
     }
@@ -245,7 +245,7 @@ void volumedecrease_task(void *p) {
   while (true) {
     if (xSemaphoreTake(volumedecrease_semaphore, portMAX_DELAY)) {
       vTaskDelay(10);
-      fprintf(stderr, "interrupt detected");
+      //fprintf(stderr, "interrupt detected");
       volumeControl(false, false);
       // break;
       vTaskDelay(10);
