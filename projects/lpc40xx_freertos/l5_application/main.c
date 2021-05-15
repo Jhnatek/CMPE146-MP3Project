@@ -1,8 +1,4 @@
-#include <stdio.h>
-
 #include "FreeRTOS.h"
-#include "task.h"
-
 #include "LPC40xx.h"
 #include "app_cli.h"
 #include "board_io.h"
@@ -11,12 +7,15 @@
 #include "ff.h"
 #include "gpio.h"
 #include "interrupt.h"
+#include "lcd_driver.h"
 #include "lpc_peripherals.h"
 #include "periodic_scheduler.h"
 #include "semphr.h"
 #include "sj2_cli.h"
+#include "task.h"
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 #define VOLUME 0x0B
 #define play_pause gpio__construct_as_input(2, 2)
 // save 2.8 and 0.17 for volume up and down
@@ -49,6 +48,7 @@ uint8_t volume_level = 5;
 
 void main(void) {
   pull_down_switches();
+  lcd__initialize();
   volumedecrease_semaphore = xSemaphoreCreateBinary();
   volumeincrease_semaphore = xSemaphoreCreateBinary();
   lpc_peripheral__enable_interrupt(LPC_PERIPHERAL__GPIO, gpio__interrupt_dispatcher, NULL);

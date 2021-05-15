@@ -13,5 +13,19 @@
         "memory_resource": "c",
         "scoped_allocator": "c",
         "gpio.h": "c"
+        "codecvt": "cpp",
+        "condition_variable": "cpp",
+        "cstddef": "cpp",
+        "forward_list": "cpp",
+        "list": "cpp",
+        "string": "cpp",
+        "rope": "cpp",
+        "future": "cpp",
+        "limits": "cpp",
+        "memory": "cpp",
+        "functional": "cpp",
+        "regex": "cpp",
+        "queue.h": "c",
+        "stdlib.h": "c"
     }
 }
