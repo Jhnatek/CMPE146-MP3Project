@@ -78,7 +78,7 @@ void mp3_reader_task(void *p) {
   UINT *byte_reader;
   FRESULT file;
   const char *song_pointer = name; // maybe delete
-  lcd__initialize(); //wont work right in main. need to make print statments after reader_task
+  lcd__initialize();               // wont work right in main. need to make print statments after reader_task
   FIL songFile;
   while (true) {
     if (xQueueReceive(Q_songname, &name, portMAX_DELAY)) {
