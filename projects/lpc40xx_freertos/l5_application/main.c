@@ -61,6 +61,7 @@ void main(void) {
   NVIC_EnableIRQ(GPIO_IRQn);
   sj2_cli__init();
   mp3_decoder__initialize();
+  song_list__populate();
   xTaskCreate(Play_Pause_Button, "Play/Pause", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   xTaskCreate(volumeincrease_task, "volumeincrease", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   xTaskCreate(volumedecrease_task, "volumedecrease", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
@@ -76,7 +77,7 @@ void main(void) {
 
 // Reader tasks receives song-name over Q_songname to start reading it
 void mp3_reader_task(void *p) {
-  songname_t name;
+  songname_t *name;
   char bytes_512[512];
   UINT *byte_reader;
   FRESULT file;
@@ -84,7 +85,8 @@ void mp3_reader_task(void *p) {
   FIL songFile;
   while (true) {
     // if (xQueueReceive(Q_songname, &name, portMAX_DELAY)) {
-    *name = (song_list__get_name_for_item(current_song));
+    name = (song_list__get_name_for_item(current_song));
+    println_to_screen(name); // eventually get rid of
     file = f_open(&songFile, name, FA_READ);
     if (FR_OK == file) {
       while (!f_eof(&songFile)) {
