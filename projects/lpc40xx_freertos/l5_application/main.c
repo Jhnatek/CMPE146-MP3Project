@@ -48,7 +48,6 @@ uint8_t volume_level = 5;
 
 void main(void) {
   pull_down_switches();
-  lcd__initialize();
   volumedecrease_semaphore = xSemaphoreCreateBinary();
   volumeincrease_semaphore = xSemaphoreCreateBinary();
   lpc_peripheral__enable_interrupt(LPC_PERIPHERAL__GPIO, gpio__interrupt_dispatcher, NULL);
@@ -58,6 +57,7 @@ void main(void) {
   NVIC_EnableIRQ(GPIO_IRQn);
   sj2_cli__init();
   mp3_decoder__initialize();
+  lcd__initialize();
   xTaskCreate(Play_Pause_Button, "Play/Pause", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   // xTaskCreate(Volume_Control, "Volume Control", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   xTaskCreate(volumeincrease_task, "volumeincrease", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
