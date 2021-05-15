@@ -3,7 +3,7 @@
 #include <stddef.h> // size_t
 
 typedef char song_memory_t[128];
-
+song_memory_t list_of_songs[32];
 /* Do not declare variables in a header file */
 #if 0
 static song_memory_t list_of_songs[32];

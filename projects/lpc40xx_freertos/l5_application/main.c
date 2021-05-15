@@ -12,6 +12,7 @@
 #include "periodic_scheduler.h"
 #include "semphr.h"
 #include "sj2_cli.h"
+#include "song_list.h"
 #include "task.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -23,9 +24,11 @@
 // switch between bass, treble, and volume, and then we can adjust those using volume+/-) 2.2, 2.5, 2.7, 2.9 2.4, 2.6,
 // !2.8, !0.17
 void pull_down_switches(void);
-
+bool pause;
+size_t current_song;
+size_t number_of_songs;
 xTaskHandle Player;
-typedef char songname_t[16]; // not quite sure what the purpose of this is, im pretty sure naveen worked on this
+typedef char songname_t[16]; // was 16, naveens code said 128 though idk
 typedef char songbyte_t[512];
 void Play_Pause_Button(void *p);
 void volumedecrease_isr(void);
@@ -35,7 +38,7 @@ void mp3_player_task(void *p);
 void volumeControl(bool higher, bool init);
 void volumeincrease_task(void *p);
 void volumedecrease_task(void *p);
-QueueHandle_t Q_songname;
+// QueueHandle_t Q_songname;
 QueueHandle_t Q_songdata;
 SemaphoreHandle_t Decoder_Mutex;
 SemaphoreHandle_t volumeincrease_semaphore;
@@ -48,22 +51,23 @@ uint8_t volume_level = 5;
 
 void main(void) {
   pull_down_switches();
+  current_song = 0;
+  number_of_songs = song_list__get_item_count();
   volumedecrease_semaphore = xSemaphoreCreateBinary();
   volumeincrease_semaphore = xSemaphoreCreateBinary();
   lpc_peripheral__enable_interrupt(LPC_PERIPHERAL__GPIO, gpio__interrupt_dispatcher, NULL);
   gpio__attach_interrupt(0, 29, GPIO_INTR__FALLING_EDGE, volumeincrease_isr);
   gpio__attach_interrupt(0, 30, GPIO_INTR__FALLING_EDGE, volumedecrease_isr);
-  // LPC_GPIO0->DIR &= ~(1 << 30);
   NVIC_EnableIRQ(GPIO_IRQn);
   sj2_cli__init();
   mp3_decoder__initialize();
+  song_list__populate();
   xTaskCreate(Play_Pause_Button, "Play/Pause", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
-  // xTaskCreate(Volume_Control, "Volume Control", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   xTaskCreate(volumeincrease_task, "volumeincrease", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   xTaskCreate(volumedecrease_task, "volumedecrease", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   xTaskCreate(mp3_reader_task, "read-task", (4096 / sizeof(void *)), NULL, PRIORITY_HIGH, NULL);
   xTaskCreate(mp3_player_task, "play-task", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, &Player);
-  Q_songname = xQueueCreate(1, sizeof(songname_t));
+  // Q_songname = xQueueCreate(1, sizeof(songname_t));
   Decoder_Mutex = xSemaphoreCreateMutex();
   Q_songdata = xQueueCreate(1, 512);
   // gpio__attach_interrupt(0, 29, GPIO_INTR__FALLING_EDGE, volumeincrease_isr);
@@ -73,26 +77,28 @@ void main(void) {
 
 // Reader tasks receives song-name over Q_songname to start reading it
 void mp3_reader_task(void *p) {
-  songname_t name;
+  songname_t *name;
   char bytes_512[512];
   UINT *byte_reader;
   FRESULT file;
-  const char *song_pointer = name; // maybe delete
-  lcd__initialize();               // wont work right in main. need to make print statments after reader_task
+  lcd__initialize(); // wont work right in main. need to make print statments after reader_task
   FIL songFile;
   while (true) {
-    if (xQueueReceive(Q_songname, &name, portMAX_DELAY)) {
-      file = f_open(&songFile, name, FA_READ);
-      if (FR_OK == file) {
-        while (!f_eof(&songFile)) {
-          f_read(&songFile, bytes_512, 512, &byte_reader);
-          xQueueSend(Q_songdata, &bytes_512, portMAX_DELAY);
-        }
-        f_close(&songFile);
-      } else {
-        fprintf(stderr, "Failed to open file \n");
+    // if (xQueueReceive(Q_songname, &name, portMAX_DELAY)) {
+    name = (song_list__get_name_for_item(current_song));
+    println_to_screen(name); // eventually get rid of
+    file = f_open(&songFile, name, FA_READ);
+    if (FR_OK == file) {
+      while (!f_eof(&songFile)) {
+        f_read(&songFile, bytes_512, 512, &byte_reader);
+        xQueueSend(Q_songdata, &bytes_512, portMAX_DELAY);
       }
+      f_close(&songFile);
+      ++current_song;
+    } else {
+      fprintf(stderr, "Failed to open file \n");
     }
+    //}
   }
 }
 
@@ -119,7 +125,7 @@ void mp3_player_task(void *p) {
 } // josh added, double check its where you want
 
 void Play_Pause_Button(void *p) {
-  bool pause = false;
+  pause = true; // changed to true so that it starts paused
   bool previous = false;
   while (1) {
     if (gpio__get(play_pause) && !previous) {
