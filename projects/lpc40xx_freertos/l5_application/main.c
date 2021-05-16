@@ -41,7 +41,7 @@ void mp3_reader_task(void *p) {
   char bytes_512[512];
   UINT *byte_reader;
   FRESULT file;
-  char current_song[32];
+  volatile int current_song;
   lcd__initialize(); // wont work right in main. need to make print statments after reader_task
   FIL songFile;
   while (true) {
@@ -60,21 +60,4 @@ void mp3_reader_task(void *p) {
     }
     //}
   }
-}
-
-// Player task receives song data over Q_songdata to send it to the MP3 decoder
-void mp3_player_task(void *p) {
-  char bytes_512[512];
-
-  while (1) {
-    xQueueReceive(Q_songdata, &bytes_512[0], portMAX_DELAY);
-    for (int i = 0; i < sizeof(bytes_512); i++) {
-      while (!mp3_decoder__needs_data()) { // need to make this
-        fprintf(stderr, "%x", bytes_512[i]);
-      }
-      fprintf(stderr, "Sending to decoder:\n");
-      spi_send_to_mp3_decoder(bytes_512[i]); // need to make this
-      fprintf(stderr, "sent\n");
-    }
-  }
-} // josh added, double check its where you want
+}le check its where you want
