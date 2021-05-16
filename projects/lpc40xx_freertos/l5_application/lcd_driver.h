@@ -14,3 +14,5 @@ void lcd_clear(void);
 void setting_command(char byte);
 
 void special_command(char byte);
+
+void print_song_list(size_t song_number, int volume);
