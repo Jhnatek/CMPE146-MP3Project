@@ -41,27 +41,29 @@ static void song_list__handle_filename(const char *filename) {
 void MP3_song__init(void) {
   FIL songs_file;
   number_of_songs = 0;
-
   // Open song_list file
-  if ((f_open(&songs_file, "song_list.txt", FA_OPEN_EXISTING | FA_READ) == FR_OK)) {
+  if ((f_open(&songs_file, "file.txt", FA_OPEN_EXISTING | FA_READ) == FR_OK)) {
     while (!f_eof(&songs_file)) {
 
       song_memory_t song_data_string = {0};
       f_gets(song_data_string, sizeof(song_memory_t) - 1, &songs_file); // extract char per line
+      printf(song_data_string);
 
       // Split String
-      for (int i = 0; i < sizeof(song_memory_t) && song_data_string[i] != '\n'; i++) {
+      int i = 0;
+      while (i < sizeof(song_memory_t) && song_data_string[i] != '\n') {
         for (int j = 0; j < number_of_data; j++) {
-          if (song_data_string[i] == '\0' || song_data_string[i] == ' ') // Check if whitespace
-            continue;
-          list_of_songs[i][j] = song_data_string[i];
+          int index = 0;
+          while (!(song_data_string[i] == '\0' || song_data_string[i] == ',')) // Check if whitespace
+            list_of_songs[number_of_songs][j][index++] = song_data_string[i++];
         }
-#if DEBUG
-        printf("Index %d, Filename %s, Songname %s, Artist %s, Album %s, Genre %s, Year %s\n", i, list_of_songs[i][0],
-               list_of_songs[i][1], list_of_songs[i][2], list_of_songs[i][3], list_of_songs[i][4], list_of_songs[i][5]);
-#endif
-        number_of_songs++;
       }
+#if DEBUG
+      printf("Index %d, Filename %s, Songname %s, Artist %s, Album %s, Genre %s, Year %s\n", number_of_songs,
+             list_of_songs[number_of_songs][0], list_of_songs[number_of_songs][1], list_of_songs[number_of_songs][2],
+             list_of_songs[number_of_songs][3], list_of_songs[number_of_songs][4], list_of_songs[number_of_songs][5]);
+#endif
+      number_of_songs++;
     }
   }
 }
@@ -93,11 +95,11 @@ void song_list__populate(void) {
 
 size_t song_list__get_item_count(void) { return number_of_songs; }
 
-const char *song_list__get_name_for_item(size_t item_number) {
-  const char *return_pointer = NULL;
+const song_memory_t *song_list__get_name_for_item(size_t item_number) {
+  song_memory_t *return_pointer = NULL;
 
   if (item_number < number_of_songs) {
-    return_pointer = list_of_songs[item_number][0]; //Return song filename
+    return_pointer = list_of_songs[item_number]; // Return song filename
   }
   return return_pointer;
 }
