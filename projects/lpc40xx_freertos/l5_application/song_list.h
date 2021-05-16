@@ -20,3 +20,4 @@ static size_t number_of_songs;
 void MP3_song__init(void); // Populating Songs
 
 uint8_t MP3_song__get_overall_size(void);
+
