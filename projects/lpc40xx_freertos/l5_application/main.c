@@ -18,7 +18,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #define VOLUME 0x0B
-#define play_pause gpio__construct_as_input(2, 2)
+#define play_pause gpio__construct_as_input(0, 6)
 // save 2.8 and 0.17 for volume up and down
 // the other ports you can use: (note that there are only 8 swtiches, i would evenutlaly like a funciton that will
 // switch between bass, treble, and volume, and then we can adjust those using volume+/-) 2.2, 2.5, 2.7, 2.9 2.4, 2.6,
@@ -56,8 +56,8 @@ void main(void) {
   volumedecrease_semaphore = xSemaphoreCreateBinary();
   volumeincrease_semaphore = xSemaphoreCreateBinary();
   lpc_peripheral__enable_interrupt(LPC_PERIPHERAL__GPIO, gpio__interrupt_dispatcher, NULL);
-  gpio__attach_interrupt(0, 29, GPIO_INTR__FALLING_EDGE, volumeincrease_isr);
-  gpio__attach_interrupt(0, 30, GPIO_INTR__FALLING_EDGE, volumedecrease_isr);
+  gpio__attach_interrupt(0, 7, GPIO_INTR__FALLING_EDGE, volumeincrease_isr);
+  gpio__attach_interrupt(0, 6, GPIO_INTR__FALLING_EDGE, volumedecrease_isr);
   NVIC_EnableIRQ(GPIO_IRQn);
   sj2_cli__init();
   mp3_decoder__initialize();
