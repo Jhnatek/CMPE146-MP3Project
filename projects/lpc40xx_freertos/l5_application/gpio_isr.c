@@ -7,8 +7,8 @@
 static function_pointer_t gpio0_callbacks[32];
 // I did it in one b/c eventhough is rising edge triggered it would still call the same port's isr function.
 
-void gpio0____attach_interrupt(uint32_t pin, gpio_interrupt_e interrupt_type, function_pointer_t callback) {
-  if (interrupt_type == GPIO_INTR__FALLING_EDGE)
+void gpio0____attach_interrupt(uint32_t pin, gpio_interrupt_e interrupt_type, function_pointer_t callback) { // was previously gpio0__attach_interrupt (uint32_t pin, gpio_interrupt_e interrupt_type, function_pointer_t callback)
+  if (interrupt_type == GPIO_INTR__FALLING_EDGE) // changed function name to gpio0____attach_interrupt(uint32_t pin, gpio_interrupt_e interrupt_type, function_pointer_t callback) bc had the same function in interrupts.c 
     LPC_GPIOINT->IO0IntEnF |= (1 << pin);
   else
     LPC_GPIOINT->IO0IntEnR |= (1 << pin);
