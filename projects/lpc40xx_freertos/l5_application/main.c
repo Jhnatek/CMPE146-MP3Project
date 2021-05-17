@@ -352,7 +352,6 @@ void bass_task(void *p) {
       // break;
       vTaskDelay(10);
     }
-    vTaskDelay(10);
 
     if (gpio__get(bassincrease)) {
       while (gpio__get(bassincrease)) {
@@ -363,7 +362,7 @@ void bass_task(void *p) {
       // break;
       vTaskDelay(10);
     }
-    vTaskDelay(250);
+    vTaskDelay(10);
   }
 }
 
@@ -388,6 +387,6 @@ void treble_task(void *p) {
       // break;
       vTaskDelay(10);
     }
+    vTaskDelay(10);
   }
-  vTaskDelay(250);
 }
