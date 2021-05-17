@@ -27,6 +27,7 @@
 #define volume_down gpio__construct_as_input(2, 7)
 #define forward_button gpio__construct_as_input(2, 6)
 #define rewind_button gpio__construct_as_input(2, 5)
+#define alternate_button gpio__construct_as_input(2, 4)
 ////////////////////////////////////////////////////
 
 // various global variables and declarations//
@@ -47,8 +48,10 @@ void mp3_player_task(void *p);
 void volumeincrease_task(void *p);
 void volumedecrease_task(void *p);
 void screen_control_task(void *p);
+void alternate_screen_task(void *p);
 QueueHandle_t Q_songdata;
 SemaphoreHandle_t Decoder_Mutex;
+SemaphoreHandle_t State_Mutex;
 xTaskHandle Player;
 ////////////////////////////////////////////////
 
@@ -65,11 +68,7 @@ void pull_down_switches(void);
 
 // Menu States
 /////////////////////
-typedef enum {
-  MENU1,
-  MENU2,
-  PAUSE,
-} menu_state;
+typedef enum { MENU1, MENU2, PAUSE_VOL, PAUSE_TREB, PAUSE_BASS } menu_state;
 menu_state current_state;
 songname_t *PAUSED = "       PAUSED       ";
 ////////////////////
@@ -100,7 +99,9 @@ void main(void) {
   xTaskCreate(mp3_reader_task, "read-task", (4096 / sizeof(void *)), NULL, PRIORITY_HIGH, NULL);
   xTaskCreate(mp3_player_task, "play-task", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, &Player);
   xTaskCreate(screen_control_task, "Screen-Controller", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
+  xTaskCreate(alternate_screen_task, "alternate-screen", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   Decoder_Mutex = xSemaphoreCreateMutex();
+  State_Mutex = xSemaphoreCreateMutex();
   Q_songdata = xQueueCreate(1, 512);
 
   vTaskStartScheduler();
@@ -124,6 +125,35 @@ void screen_control_task(void *p) {
     }
     vTaskDelay(100);
     changed = false;
+  }
+}
+
+void alternate_screen_task(void *p) {
+  while (1) {
+    if (gpio__get(alternate_button) && xSemaphoreTake(State_Mutex, 0)) {
+      while (gpio__get(alternate_button)) {
+      }
+      switch (current_state) {
+      case MENU2:
+        current_state = MENU1;
+        break;
+      case MENU1:
+        current_state = MENU2;
+        break;
+      case PAUSE_VOL:
+        current_state = PAUSE_TREB;
+        break;
+      case PAUSE_TREB:
+        current_state = PAUSE_BASS;
+        break;
+      case PAUSE_BASS:
+        current_state = PAUSE_VOL;
+        break;
+      }
+      xSemaphoreGive(State_Mutex);
+      update_menu();
+    }
+    vTaskDelay(100);
   }
 }
 
@@ -186,7 +216,7 @@ void Play_Pause_Button(void *p) {
   while (1) {
     if (gpio__get(play_pause) && !previous) {
       pause = true;
-      current_state = PAUSE;
+      current_state = PAUSE_VOL;
       update_menu();
     }
     if (gpio__get(play_pause) && previous) {
@@ -244,6 +274,7 @@ void volumeControl(bool higher, bool init) {
     default:
       MP3_decoder__sci_write(VOLUME, 0x3535);
     }
+    update_menu();
     xSemaphoreGive(Decoder_Mutex);
   }
 }
@@ -276,6 +307,7 @@ void pull_down_switches(void) {
   gpio__enable_pull_down_resistors(volume_down);
   gpio__enable_pull_down_resistors(rewind_button);
   gpio__enable_pull_down_resistors(forward_button);
+  gpio__enable_pull_down_resistors(alternate_button);
 }
 
 void update_menu(void) {
@@ -284,26 +316,41 @@ void update_menu(void) {
   char *buffer_pointer2;
   char *buffer_pointer3;
   lcd_clear();
-  switch (current_state) {
-  case MENU1:
-    buffer_pointer1 = song_list__get_name_for_item(1, current_song);
-    center_text_to_screen(buffer_pointer1);
-    buffer_pointer2 = song_list__get_name_for_item(2, current_song);
-    center_text_to_screen(buffer_pointer2);
-    buffer_pointer3 = song_list__get_name_for_item(3, current_song);
-    center_text_to_screen(buffer_pointer3);
-    sprintf(buffer, "      Vol = %d       ", volume_level);
-    println_to_screen(buffer);
-    break;
-  case MENU2:
+  if (xSemaphoreTake(State_Mutex, 0)) {
+    switch (current_state) {
+    case MENU1:
+      buffer_pointer1 = song_list__get_name_for_item(1, current_song);
+      center_text_to_screen(buffer_pointer1);
+      buffer_pointer2 = song_list__get_name_for_item(2, current_song);
+      center_text_to_screen(buffer_pointer2);
+      buffer_pointer3 = song_list__get_name_for_item(3, current_song);
+      center_text_to_screen(buffer_pointer3);
+      sprintf(buffer, "      Vol = %d       ", volume_level);
+      println_to_screen(buffer);
+      break;
+    case MENU2:
+      buffer_pointer1 = song_list__get_name_for_item(4, current_song);
+      center_text_to_screen(buffer_pointer1);
+      buffer_pointer2 = song_list__get_name_for_item(5, current_song);
+      center_text_to_screen(buffer_pointer2);
+      println_to_screen("                    ");
+      sprintf(buffer, " Vol = %d       ", volume_level);
+      println_to_screen(buffer);
+      break;
+    case PAUSE_VOL:
+      println_to_screen("                    ");
+      println_to_screen(PAUSED);
+      println_to_screen("                    ");
+      sprintf(buffer, "      Vol = %d       ", volume_level);
+      println_to_screen(buffer);
+      break;
+    case PAUSE_TREB:
 
-    break;
-  case PAUSE:
-    println_to_screen("                    ");
-    println_to_screen(PAUSED);
-    println_to_screen("                    ");
-    sprintf(buffer, "      Vol = %d       ", volume_level);
-    println_to_screen(buffer);
-    break;
+      break;
+    case PAUSE_BASS:
+
+      break;
+    }
+    xSemaphoreGive(State_Mutex);
   }
 }

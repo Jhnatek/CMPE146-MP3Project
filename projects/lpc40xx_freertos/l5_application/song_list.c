@@ -127,7 +127,7 @@ song_memory_t *song_list__get_name_for_item_only(size_t item_number) {
 song_memory_t *song_list__get_name_for_item(size_t item_number, size_t current_song) {
   song_memory_t *return_pointer = NULL;
 
-  if (item_number < number_of_songs) {
+  if (current_song < number_of_songs) {
     return_pointer = list_of_songs[current_song][item_number];
   }
   return return_pointer;
