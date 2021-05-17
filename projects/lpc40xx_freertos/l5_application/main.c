@@ -216,6 +216,15 @@ void mp3_player_task(void *p) {
   }
 }
 
+void write_to_decoder_function(void) {
+  if (xSemaphoreTake(Decoder_Mutex, portMAX_DELAY)) {
+    uint16_t bass_treble;
+    bass_treble = (((treble_level << 12) & 0xF000) + 0x0F00 + (((bass_level * 3) << 4) & 0x00F0) + 0x000F);
+    MP3_decoder__sci_write(BASS, bass_treble);
+    xSemaphoreGive(Decoder_Mutex);
+  }
+}
+
 void bass_function(bool higher) {
   if (higher && bass_level < 5) {
 
