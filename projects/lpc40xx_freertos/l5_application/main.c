@@ -1,4 +1,5 @@
 #include "FreeRTOS.h"
+#include "LED_control.h"
 #include "LPC40xx.h"
 #include "app_cli.h"
 #include "board_io.h"
@@ -31,7 +32,7 @@
 bool pause;
 size_t current_song;
 size_t number_of_songs;
-typedef char songname_t[16];
+typedef char songname_t[20]; // changed from 16 to 20
 typedef char songbyte_t[512];
 /////////////////////////////////////////////////
 
@@ -58,10 +59,27 @@ uint8_t volume_level = 5;
 void pull_down_switches(void);
 ///////////////////////////////
 
+// Menu States
+/////////////////////
+typedef enum {
+  MENU1,
+  MENU2,
+  PAUSE,
+} menu_state;
+menu_state current_state;
+songname_t *PAUSED = "       PAUSED       ";
+////////////////////
+
+// Set menu function
+////////////////////////
+void update_menu(void);
+////////////////////////
+
 // flash: python nxp-programmer/flash.py
 
 void main(void) {
   pull_down_switches();
+  MP3_decoder__sci_write(VOLUME, 0x3030); // sets volume initially, otherwise starts at max
   current_song = 0;
   number_of_songs = song_list__get_item_count();
   lpc_peripheral__enable_interrupt(LPC_PERIPHERAL__GPIO, gpio__interrupt_dispatcher, NULL);
@@ -69,6 +87,8 @@ void main(void) {
   sj2_cli__init();
   mp3_decoder__initialize();
   song_list__populate();
+  initialize_pwm();
+  test_color();
   xTaskCreate(Play_Pause_Button, "Play/Pause", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   xTaskCreate(volumeincrease_task, "volumeincrease", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   xTaskCreate(volumedecrease_task, "volumedecrease", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
@@ -89,7 +109,7 @@ void mp3_reader_task(void *p) {
   FIL songFile;
   while (true) {
     name = (song_list__get_name_for_item(current_song));
-    println_to_screen(name); // need to replace with funciton
+    // println_to_screen(name); // need to replace with funciton
     file = f_open(&songFile, name, FA_READ);
     if (FR_OK == file) {
       while (!f_eof(&songFile)) {
@@ -128,6 +148,8 @@ void Play_Pause_Button(void *p) {
   while (1) {
     if (gpio__get(play_pause) && !previous) {
       pause = true;
+      current_state = PAUSE;
+      update_menu();
     }
     if (gpio__get(play_pause) && previous) {
       pause = false;
@@ -212,4 +234,24 @@ void pull_down_switches(void) {
   gpio__enable_pull_down_resistors(play_pause); // Josh needs this because the buttons are active high
   gpio__enable_pull_down_resistors(volume_up);
   gpio__enable_pull_down_resistors(volume_down);
+}
+
+void update_menu(void) {
+  char buffer[20];
+  lcd_clear();
+  switch (current_state) {
+  case MENU1:
+
+    break;
+  case MENU2:
+
+    break;
+  case PAUSE:
+    println_to_screen("                    ");
+    println_to_screen(PAUSED);
+    println_to_screen("                    ");
+    sprintf(buffer, "      Vol = %d       ", volume_level);
+    println_to_screen(buffer);
+    break;
+  }
 }

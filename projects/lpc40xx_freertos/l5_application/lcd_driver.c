@@ -50,7 +50,7 @@ void lcd__initialize(void) {
   special_command(0x08 | 0x04); // turn display on
   special_command(0x04 | 0x02); // set the entry mode
   lcd_clear();
-  println_to_screen("the beatles");
+  // println_to_screen("the beatles"); //delete
 }
 
 void println_to_screen(char *str) {
