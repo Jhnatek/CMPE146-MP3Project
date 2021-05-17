@@ -4,7 +4,7 @@
 
 #include "ff.h"
 
-static song_memory_t list_of_songs[32];
+song_memory_t list_of_songs[32];
 static size_t number_of_songs;
 
 static void song_list__handle_filename(const char *filename) {

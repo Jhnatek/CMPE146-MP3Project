@@ -18,7 +18,9 @@
 #include <stdint.h>
 #include <stdio.h>
 #define VOLUME 0x0B
-#define play_pause gpio__construct_as_input(0, 6)
+#define play_pause gpio__construct_as_input(2, 2)
+#define volume_up gpio__construct_as_input(2, 8)
+#define volume_down gpio__construct_as_input(2, 7)
 // save 2.8 and 0.17 for volume up and down
 // the other ports you can use: (note that there are only 8 swtiches, i would evenutlaly like a funciton that will
 // switch between bass, treble, and volume, and then we can adjust those using volume+/-) 2.2, 2.5, 2.7, 2.9 2.4, 2.6,
@@ -41,8 +43,8 @@ void volumedecrease_task(void *p);
 // QueueHandle_t Q_songname;
 QueueHandle_t Q_songdata;
 SemaphoreHandle_t Decoder_Mutex;
-SemaphoreHandle_t volumeincrease_semaphore;
-SemaphoreHandle_t volumedecrease_semaphore;
+// SemaphoreHandle_t volumeincrease_semaphore;
+// SemaphoreHandle_t volumedecrease_semaphore;
 
 uint8_t volume_level = 5;
 // MP3_decoder__sci_write(VOLUME, 0x3030)
@@ -53,11 +55,11 @@ void main(void) {
   pull_down_switches();
   current_song = 0;
   number_of_songs = song_list__get_item_count();
-  volumedecrease_semaphore = xSemaphoreCreateBinary();
-  volumeincrease_semaphore = xSemaphoreCreateBinary();
-  lpc_peripheral__enable_interrupt(LPC_PERIPHERAL__GPIO, gpio__interrupt_dispatcher, NULL);
-  gpio__attach_interrupt(0, 7, GPIO_INTR__FALLING_EDGE, volumeincrease_isr);
-  gpio__attach_interrupt(0, 6, GPIO_INTR__FALLING_EDGE, volumedecrease_isr);
+  // volumedecrease_semaphore = xSemaphoreCreateBinary();
+  // volumeincrease_semaphore = xSemaphoreCreateBinary();
+  lpc_peripheral__enable_interrupt(LPC_PERIPHERAL__GPIO, gpio__interrupt_dispatcher, NULL); // maybe delete
+  // gpio__attach_interrupt(2, 8, GPIO_INTR__FALLING_EDGE, volumeincrease_isr);
+  // gpio__attach_interrupt(2, 7, GPIO_INTR__FALLING_EDGE, volumedecrease_isr);
   NVIC_EnableIRQ(GPIO_IRQn);
   sj2_cli__init();
   mp3_decoder__initialize();
@@ -232,32 +234,34 @@ void volumeControl(bool higher, bool init) {
   }
 }
 
-void volumeincrease_isr(void) { xSemaphoreGiveFromISR(volumeincrease_semaphore, NULL); }
-void volumedecrease_isr(void) { xSemaphoreGiveFromISR(volumedecrease_semaphore, NULL); }
+////void volumeincrease_isr(void) { xSemaphoreGiveFromISR(volumeincrease_semaphore, NULL); }
+// void volumedecrease_isr(void) { xSemaphoreGiveFromISR(volumedecrease_semaphore, NULL); }
 
 void volumeincrease_task(void *p) {
   while (1) {
-    if (xSemaphoreTake(volumeincrease_semaphore, portMAX_DELAY)) {
+    if (gpio__get(volume_up)) {
       vTaskDelay(10);
       // fprintf(stderr, "interrupt detected");
       volumeControl(true, false);
       vTaskDelay(10);
     }
+    vTaskDelay(100);
   }
-  xSemaphoreGive(volumeincrease_semaphore);
+  // xSemaphoreGive(volumeincrease_semaphore);
 }
 
 void volumedecrease_task(void *p) {
   while (true) {
-    if (xSemaphoreTake(volumedecrease_semaphore, portMAX_DELAY)) {
+    if (gpio__get(volume_down)) {
       vTaskDelay(10);
       // fprintf(stderr, "interrupt detected");
       volumeControl(false, false);
       // break;
       vTaskDelay(10);
     }
+    vTaskDelay(100);
   }
-  xSemaphoreGive(volumedecrease_semaphore);
+  // xSemaphoreGive(volumedecrease_semaphore);
 }
 // void gpio_interrupt(void) {
 //   fprintf(stderr, "Interrupt has been received!!"); // prints that interrupt has been detected
@@ -269,4 +273,6 @@ void volumedecrease_task(void *p) {
 
 void pull_down_switches(void) {
   gpio__enable_pull_down_resistors(play_pause); // Josh needs this because the buttons are active high
+  gpio__enable_pull_down_resistors(volume_up);
+  gpio__enable_pull_down_resistors(volume_down);
 }
