@@ -307,9 +307,9 @@ void Play_Pause_Button(void *p) {
 
 void volumeControl(bool higher, bool init) {
 
-  if (higher && volume_level < 8 && !init) {
+  if (higher && volume_level < 16) {
     volume_level++;
-  } else if (!higher && volume_level > 1 && !init) {
+  } else if (!higher && volume_level > 0) {
     volume_level--;
   }
   if (xSemaphoreTake(Decoder_Mutex, portMAX_DELAY)) {
