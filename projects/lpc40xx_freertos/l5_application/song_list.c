@@ -37,10 +37,12 @@ static void song_list__handle_filename(const char *filename) {
 */
 
 #define DEBUG 1 // Make this 1 to turn on DEBUG
+#define CHAR_SEPARATOR '|'
 
 void MP3_song__init(void) {
   FIL songs_file;
   number_of_songs = 0;
+
   // Open song_list file
   if ((f_open(&songs_file, "song_list.txt", FA_OPEN_EXISTING | FA_READ) == FR_OK)) {
     while (!f_eof(&songs_file)) {
@@ -51,15 +53,17 @@ void MP3_song__init(void) {
 
       // Split String
       int i = 0;
-      while (i < sizeof(song_memory_t) && song_data_string[i] != '\n') {
-        for (int j = 0; j < number_of_data; j++) {
-          int index = 0;
-          while (!(song_data_string[i] == '\0' || song_data_string[i] == ',')) // Check if whitespace
-            list_of_songs[number_of_songs][j][index++] = song_data_string[i++];
+      for (int j = 0; j < number_of_data; j++) {
+        int index = 0;
+        while (!(song_data_string[i] == '\n' || song_data_string[i] == '\0' ||
+                 song_data_string[i] == CHAR_SEPARATOR)) { // Check if whitespace
+          // printf("JIndex: %d, Index: %d, Char %c\n", j, index, song_data_string[i]);
+          list_of_songs[number_of_songs][j][index++] = song_data_string[i++];
         }
+        i++; // Consume '\0' or ',';
       }
 #if DEBUG
-      printf("Index %d, Filename %s, Songname %s, Artist %s, Album %s, Genre %s, Year %s\n", number_of_songs,
+      printf("Index %d, Filename %s, Songname %s, Artist %s, Album %s, Year %s, Genre %s\n", number_of_songs,
              list_of_songs[number_of_songs][0], list_of_songs[number_of_songs][1], list_of_songs[number_of_songs][2],
              list_of_songs[number_of_songs][3], list_of_songs[number_of_songs][4], list_of_songs[number_of_songs][5]);
 #endif
@@ -99,7 +103,7 @@ const song_memory_t *song_list__get_name_for_item(size_t item_number) {
   song_memory_t *return_pointer = NULL;
 
   if (item_number < number_of_songs) {
-    return_pointer = list_of_songs[item_number]; // Return song filename
+    return_pointer = list_of_songs[item_number];
   }
   return return_pointer;
 }
