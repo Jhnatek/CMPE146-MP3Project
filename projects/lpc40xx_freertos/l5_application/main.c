@@ -21,7 +21,7 @@
 #define BASS 0x02
 
 #define play_pause gpio__construct_as_input(2, 2)
-#define bassincrease gpio__construct_as_input(2, 4)
+#define bassincrease gpio__construct_as_input(2, 6)
 #define bassdecrease gpio__construct_as_input(2, 5)
 #define trebleincrease gpio__construct_as_input(2, 7)
 #define trebledecrease gpio__construct_as_input(2, 9)
@@ -277,6 +277,7 @@ void volumeincrease_task(void *p) {
     }
   }
   xSemaphoreGive(volumeincrease_semaphore);
+  vTaskDelay(250);
 }
 
 void volumedecrease_task(void *p) {
@@ -291,6 +292,7 @@ void volumedecrease_task(void *p) {
     }
   }
   xSemaphoreGive(volumedecrease_semaphore);
+  vTaskDelay(250);
 }
 // void gpio_interrupt(void) {
 //   fprintf(stderr, "Interrupt has been received!!"); // prints that interrupt has been detected
@@ -351,6 +353,7 @@ void bass_task(void *p) {
       vTaskDelay(10);
     }
     vTaskDelay(10);
+
     if (gpio__get(bassincrease)) {
       while (gpio__get(bassincrease)) {
       }
@@ -360,6 +363,7 @@ void bass_task(void *p) {
       // break;
       vTaskDelay(10);
     }
+    vTaskDelay(250);
   }
 }
 
@@ -385,4 +389,5 @@ void treble_task(void *p) {
       vTaskDelay(10);
     }
   }
+  vTaskDelay(250);
 }
