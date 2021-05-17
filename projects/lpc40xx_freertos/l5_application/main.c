@@ -22,16 +22,17 @@
 
 // button definitions//
 ////////////////////////////////////////////////////
-#define play_pause gpio__construct_as_input(0, 1)
+#define play_pause gpio__construct_as_input(0, 1) // normally 0,1
 #define volume_up gpio__construct_as_input(2, 8)
 #define volume_down gpio__construct_as_input(2, 7)
-#define forward_button gpio__construct_as_input(2, 5)
-#define rewind_button gpio__construct_as_input(2, 6)
+#define forward_button gpio__construct_as_input(2, 6)
+#define rewind_button gpio__construct_as_input(2, 5)
 ////////////////////////////////////////////////////
 
 // various global variables and declarations//
 /////////////////////////////////////////////////
 bool pause;
+bool stay_in_loop;
 size_t current_song;
 size_t number_of_songs;
 typedef char songname_t[20]; // changed from 16 to 20
@@ -92,50 +93,34 @@ void main(void) {
   test_color();
   MP3_decoder__sci_write(VOLUME, 0x3030); // sets volume initially, otherwise starts at max
   current_song = 0;
+  stay_in_loop = true;
   xTaskCreate(Play_Pause_Button, "Play/Pause", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   xTaskCreate(volumeincrease_task, "volumeincrease", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   xTaskCreate(volumedecrease_task, "volumedecrease", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   xTaskCreate(mp3_reader_task, "read-task", (4096 / sizeof(void *)), NULL, PRIORITY_HIGH, NULL);
   xTaskCreate(mp3_player_task, "play-task", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, &Player);
+  xTaskCreate(screen_control_task, "Screen-Controller", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   Decoder_Mutex = xSemaphoreCreateMutex();
   Q_songdata = xQueueCreate(1, 512);
 
   vTaskStartScheduler();
 }
 
-bool check_up_button() {
-  if (gpio__get(forward_button)) {
-    while (gpio__get(forward_button)) {
-      vTaskDelay(10);
-    }
-    return true;
-  }
-  return false;
-}
-
-bool check_down_button() {
-  if (gpio__get(rewind_button)) {
-    while (gpio__get(rewind_button)) {
-      vTaskDelay(10);
-    }
-    return true;
-  }
-  return false;
-}
-
 void screen_control_task(void *p) {
   bool changed = false;
 
   while (1) {
-    if (check_up_button && current_song + 1 != song_list__get_item_count()) {
+    if (gpio__get(forward_button) && current_song + 1 != song_list__get_item_count()) {
       current_song++;
+      fprintf(stderr, "increase song\n");
       changed = true;
-    } else if (check_down_button && current_song - 1 >= 0) {
+    } else if (gpio__get(rewind_button) && (current_song != 0)) {
       current_song--;
       changed = true;
     }
 
     if (changed) {
+      stay_in_loop = false;
       // set new menu? probs not
     }
     vTaskDelay(100);
@@ -155,12 +140,17 @@ void mp3_reader_task(void *p) {
     // println_to_screen(name); // need to replace with funciton
     file = f_open(&songFile, name, FA_READ);
     if (FR_OK == file) {
-      while (!f_eof(&songFile)) {
+      while ((!f_eof(&songFile)) && stay_in_loop) {
         f_read(&songFile, bytes_512, 512, &byte_reader);
         xQueueSend(Q_songdata, &bytes_512, portMAX_DELAY);
       }
       f_close(&songFile);
-      ++current_song;
+      if (stay_in_loop) {
+        ++current_song;
+      } else {
+        fprintf(stderr, "stay in loop was false\n");
+        stay_in_loop = true;
+      }
     } else {
       fprintf(stderr, "Failed to open file \n");
     }
