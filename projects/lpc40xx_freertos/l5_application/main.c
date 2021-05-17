@@ -49,6 +49,8 @@ void volumeincrease_task(void *p);
 void volumedecrease_task(void *p);
 void screen_control_task(void *p);
 void alternate_screen_task(void *p);
+void bass_task(void *p);
+void treble_task(void *p);
 QueueHandle_t Q_songdata;
 SemaphoreHandle_t Decoder_Mutex;
 SemaphoreHandle_t State_Mutex;
@@ -100,6 +102,8 @@ void main(void) {
   xTaskCreate(mp3_player_task, "play-task", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, &Player);
   xTaskCreate(screen_control_task, "Screen-Controller", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   xTaskCreate(alternate_screen_task, "alternate-screen", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
+  xTaskCreate(bass_task, "bass increase", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
+  xTaskCreate(treble_task, "treble increase", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   Decoder_Mutex = xSemaphoreCreateMutex();
   State_Mutex = xSemaphoreCreateMutex();
   Q_songdata = xQueueCreate(1, 512);
@@ -206,6 +210,78 @@ void mp3_player_task(void *p) {
         spi_send_to_mp3_decoder(bytes_512[i]);
         xSemaphoreGive(Decoder_Mutex);
       }
+    }
+  }
+}
+
+void bass_function(bool higher) {
+  fprintf(stderr, "GOT INTO BASS FUNCTION\n");
+  if (higher && bass_level < 5) {
+
+    bass_level++;
+  } else if (!higher && bass_level > 1) {
+    bass_level--;
+  }
+  write_to_decoder_function();
+}
+
+void treble_function(bool higher) {
+  fprintf(stderr, "GOT INTO TREBLE FUNCTION\n");
+  if (higher && treble_level < 7) {
+    treble_level++;
+  } else if (!higher && treble_level > -8) {
+    treble_level--;
+  }
+  write_to_decoder_function();
+}
+
+
+void bass_task(void *p) {
+  while (true) {
+    vTaskDelay(10);
+    if (gpio__get(bassdecrease)) {
+      while (gpio__get(bassdecrease)) {
+      }
+      vTaskDelay(10);
+      fprintf(stderr, "interrupt detected");
+      bass_function(false);
+      // break;
+      vTaskDelay(10);
+    }
+
+    if (gpio__get(bassincrease)) {
+      while (gpio__get(bassincrease)) {
+      }
+      vTaskDelay(10);
+      fprintf(stderr, "interrupt detected");
+      bass_function(true);
+      // break;
+      vTaskDelay(10);
+    }
+    vTaskDelay(10);
+  }
+}
+
+void treble_task(void *p) {
+  while (true) {
+    vTaskDelay(10);
+    if (gpio__get(trebledecrease)) {
+      while (gpio__get(trebledecrease)) {
+      }
+      vTaskDelay(10);
+      fprintf(stderr, "interrupt detected");
+      treble_function(false);
+      // break;
+      vTaskDelay(10);
+    }
+    if (gpio__get(trebleincrease)) {
+      while (gpio__get(trebleincrease)) {
+      }
+      vTaskDelay(10);
+      fprintf(stderr, "interrupt detected");
+      treble_function(true);
+      // break;
+      vTaskDelay(10);
     }
   }
 }
