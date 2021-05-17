@@ -25,6 +25,8 @@
 #define play_pause gpio__construct_as_input(0, 1)
 #define volume_up gpio__construct_as_input(2, 8)
 #define volume_down gpio__construct_as_input(2, 7)
+#define forward_button gpio__construct_as_input(2, 5)
+#define rewind_button gpio__construct_as_input(2, 6)
 ////////////////////////////////////////////////////
 
 // various global variables and declarations//
@@ -43,6 +45,7 @@ void mp3_reader_task(void *p);
 void mp3_player_task(void *p);
 void volumeincrease_task(void *p);
 void volumedecrease_task(void *p);
+void screen_control_task(void *p);
 QueueHandle_t Q_songdata;
 SemaphoreHandle_t Decoder_Mutex;
 xTaskHandle Player;
@@ -79,8 +82,6 @@ void update_menu(void);
 
 void main(void) {
   pull_down_switches();
-  MP3_decoder__sci_write(VOLUME, 0x3030); // sets volume initially, otherwise starts at max
-  current_song = 0;
   number_of_songs = song_list__get_item_count();
   lpc_peripheral__enable_interrupt(LPC_PERIPHERAL__GPIO, gpio__interrupt_dispatcher, NULL);
   NVIC_EnableIRQ(GPIO_IRQn);
@@ -89,6 +90,8 @@ void main(void) {
   song_list__populate();
   initialize_pwm();
   test_color();
+  MP3_decoder__sci_write(VOLUME, 0x3030); // sets volume initially, otherwise starts at max
+  current_song = 0;
   xTaskCreate(Play_Pause_Button, "Play/Pause", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   xTaskCreate(volumeincrease_task, "volumeincrease", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   xTaskCreate(volumedecrease_task, "volumedecrease", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
@@ -98,6 +101,46 @@ void main(void) {
   Q_songdata = xQueueCreate(1, 512);
 
   vTaskStartScheduler();
+}
+
+bool check_up_button() {
+  if (gpio__get(forward_button)) {
+    while (gpio__get(forward_button)) {
+      vTaskDelay(10);
+    }
+    return true;
+  }
+  return false;
+}
+
+bool check_down_button() {
+  if (gpio__get(rewind_button)) {
+    while (gpio__get(rewind_button)) {
+      vTaskDelay(10);
+    }
+    return true;
+  }
+  return false;
+}
+
+void screen_control_task(void *p) {
+  bool changed = false;
+
+  while (1) {
+    if (check_up_button && current_song + 1 != song_list__get_item_count()) {
+      current_song++;
+      changed = true;
+    } else if (check_down_button && current_song - 1 >= 0) {
+      current_song--;
+      changed = true;
+    }
+
+    if (changed) {
+      // set new menu? probs not
+    }
+    vTaskDelay(100);
+    changed = false;
+  }
 }
 
 void mp3_reader_task(void *p) {
@@ -234,6 +277,8 @@ void pull_down_switches(void) {
   gpio__enable_pull_down_resistors(play_pause); // Josh needs this because the buttons are active high
   gpio__enable_pull_down_resistors(volume_up);
   gpio__enable_pull_down_resistors(volume_down);
+  gpio__enable_pull_down_resistors(rewind_button);
+  gpio__enable_pull_down_resistors(forward_button);
 }
 
 void update_menu(void) {
