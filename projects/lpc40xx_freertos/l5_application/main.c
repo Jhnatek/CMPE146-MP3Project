@@ -36,6 +36,8 @@ bool pause;
 bool stay_in_loop;
 size_t current_song;
 size_t number_of_songs;
+uint8_t bass_level = 0;
+uint8_t treble_level = 0;
 typedef char songname_t[20]; // changed from 16 to 20
 typedef char songbyte_t[512];
 /////////////////////////////////////////////////
@@ -215,7 +217,6 @@ void mp3_player_task(void *p) {
 }
 
 void bass_function(bool higher) {
-  fprintf(stderr, "GOT INTO BASS FUNCTION\n");
   if (higher && bass_level < 5) {
 
     bass_level++;
@@ -226,7 +227,6 @@ void bass_function(bool higher) {
 }
 
 void treble_function(bool higher) {
-  fprintf(stderr, "GOT INTO TREBLE FUNCTION\n");
   if (higher && treble_level < 7) {
     treble_level++;
   } else if (!higher && treble_level > -8) {
@@ -238,22 +238,15 @@ void treble_function(bool higher) {
 
 void bass_task(void *p) {
   while (true) {
-    vTaskDelay(10);
     if (gpio__get(bassdecrease)) {
       while (gpio__get(bassdecrease)) {
       }
-      vTaskDelay(10);
-      fprintf(stderr, "interrupt detected");
       bass_function(false);
-      // break;
-      vTaskDelay(10);
     }
 
-    if (gpio__get(bassincrease)) {
+    else if (gpio__get(bassincrease)) {
       while (gpio__get(bassincrease)) {
       }
-      vTaskDelay(10);
-      fprintf(stderr, "interrupt detected");
       bass_function(true);
       // break;
       vTaskDelay(10);
