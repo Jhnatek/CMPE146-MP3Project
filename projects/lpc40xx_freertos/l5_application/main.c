@@ -21,6 +21,8 @@
 #define BASS 0x02
 
 #define play_pause gpio__construct_as_input(2, 2)
+#define volumedecrease gpio__construct_as_input(2, 8)
+#define volumeincrease gpio__construct_as_input(0, 17)
 #define bassincrease gpio__construct_as_input(2, 6)
 #define bassdecrease gpio__construct_as_input(2, 5)
 #define trebleincrease gpio__construct_as_input(2, 7)
@@ -35,13 +37,13 @@ xTaskHandle Player;
 typedef char songname_t[16]; // not quite sure what the purpose of this is, im pretty sure naveen worked on this
 typedef char songbyte_t[512];
 void Play_Pause_Button(void *p);
-void volumedecrease_isr(void);
-void volumeincrease_isr(void);
+// void volumedecrease_isr(void);
+// void volumeincrease_isr(void);
 void mp3_reader_task(void *p);
 void mp3_player_task(void *p);
 void volumeControl(bool higher, bool init);
-void volumeincrease_task(void *p);
-void volumedecrease_task(void *p);
+void volume_task(void *p);
+// void volumedecrease_task(void *p);
 // void bassdecrease_isr(void);
 // void bassincrease_isr(void);
 // void trebledecrease_isr(void);
@@ -54,9 +56,9 @@ void treble_task(void *p);
 QueueHandle_t Q_songname;
 QueueHandle_t Q_songdata;
 SemaphoreHandle_t Decoder_Mutex;
-SemaphoreHandle_t volumeincrease_semaphore;
-SemaphoreHandle_t volumedecrease_semaphore;
-// SemaphoreHandle_t bassdecrease_semaphore;
+// SemaphoreHandle_t volumeincrease_semaphore;
+// SemaphoreHandle_t volumedecrease_semaphore;
+// // SemaphoreHandle_t bassdecrease_semaphore;
 // SemaphoreHandle_t bassincrease_semaphore;
 // SemaphoreHandle_t trebledecrease_semaphore;
 // SemaphoreHandle_t trebleincrease_semaphore;
@@ -70,15 +72,15 @@ uint8_t treble_level = 0;
 
 void main(void) {
   pull_down_switches();
-  volumedecrease_semaphore = xSemaphoreCreateBinary();
-  volumeincrease_semaphore = xSemaphoreCreateBinary();
+  // volumedecrease_semaphore = xSemaphoreCreateBinary();
+  // volumeincrease_semaphore = xSemaphoreCreateBinary();
   // bassincrease_semaphore = xSemaphoreCreateBinary();
   // bassdecrease_semaphor+e = xSemaphoreCreateBinary();
   // trebleincrease_semaphore = xSemaphoreCreateBinary();
   // trebledecrease_semaphore = xSemaphoreCreateBinary();
-  lpc_peripheral__enable_interrupt(LPC_PERIPHERAL__GPIO, gpio__interrupt_dispatcher, NULL);
-  gpio__attach_interrupt(2, 8, GPIO_INTR__FALLING_EDGE, volumeincrease_isr);
-  gpio__attach_interrupt(0, 17, GPIO_INTR__FALLING_EDGE, volumedecrease_isr);
+  // lpc_peripheral__enable_interrupt(LPC_PERIPHERAL__GPIO, gpio__interrupt_dispatcher, NULL);
+  // gpio__attach_interrupt(2, 8, GPIO_INTR__FALLING_EDGE, volumeincrease_isr);
+  // gpio__attach_interrupt(0, 17, GPIO_INTR__FALLING_EDGE, volumedecrease_isr);
   // gpio__attach_interrupt(2, 2, GPIO_INTR__FALLING_EDGE, bassincrease_isr);
   // gpio__attach_interrupt(2, 5, GPIO_INTR__FALLING_EDGE, bassdecrease_isr);
   // gpio__attach_interrupt(2, 7, GPIO_INTR__FALLING_EDGE, trebleincrease_isr);
@@ -88,7 +90,7 @@ void main(void) {
   // gpio__attach_interrupt(2, 7, GPIO_INTR__FALLING_EDGE, trebleincrease_isr);
   // gpio__attach_interrupt(2, 9, GPIO_INTR__FALLING_EDGE, trebledecrease_isr);
   // LPC_GPIO0->DIR &= ~(1 << 30);
-  NVIC_EnableIRQ(GPIO_IRQn);
+  // NVIC_EnableIRQ(GPIO_IRQn);
   sj2_cli__init();
   mp3_decoder__initialize();
   xTaskCreate(bass_task, "bass increase", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
@@ -96,8 +98,8 @@ void main(void) {
 
   xTaskCreate(Play_Pause_Button, "Play/Pause", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   // xTaskCreate(Volume_Control, "Volume Control", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
-  xTaskCreate(volumeincrease_task, "volumeincrease", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
-  xTaskCreate(volumedecrease_task, "volumedecrease", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
+  xTaskCreate(volume_task, "volumeincrease", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
+  // xTaskCreate(volumedecrease_task, "volumedecrease", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   xTaskCreate(mp3_reader_task, "read-task", (4096 / sizeof(void *)), NULL, PRIORITY_HIGH, NULL);
   xTaskCreate(mp3_player_task, "play-task", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, &Player);
   Q_songname = xQueueCreate(1, sizeof(songname_t));
@@ -263,10 +265,10 @@ void volumeControl(bool higher, bool init) {
   }
 }
 
-void volumeincrease_isr(void) { xSemaphoreGiveFromISR(volumeincrease_semaphore, NULL); }
-void volumedecrease_isr(void) { xSemaphoreGiveFromISR(volumedecrease_semaphore, NULL); }
+// void volumeincrease_isr(void) { xSemaphoreGiveFromISR(volumeincrease_semaphore, NULL); }
+// void volumedecrease_isr(void) { xSemaphoreGiveFromISR(volumedecrease_semaphore, NULL); }
 
-void volumeincrease_task(void *p) {
+void volume_task(void *p) {
   while (1) {
     vTaskDelay(10);
     if (xSemaphoreTake(volumeincrease_semaphore, portMAX_DELAY)) {
@@ -276,24 +278,31 @@ void volumeincrease_task(void *p) {
       vTaskDelay(10);
     }
   }
-  xSemaphoreGive(volumeincrease_semaphore);
-  vTaskDelay(250);
-}
-
-void volumedecrease_task(void *p) {
-  while (true) {
-    vTaskDelay(10);
-    if (xSemaphoreTake(volumedecrease_semaphore, portMAX_DELAY)) {
+  if (xSemaphoreTake(volumedecrease_semaphore, portMAX_DELAY)) {
       vTaskDelay(10);
       fprintf(stderr, "interrupt detected");
       volumeControl(false, false);
       // break;
       vTaskDelay(10);
     }
-  }
-  xSemaphoreGive(volumedecrease_semaphore);
-  vTaskDelay(250);
+  xSemaphoreGive(volumeincrease_semaphore);
+  vTaskDelay(10);
 }
+
+// void volumedecrease_task(void *p) {
+//   while (true) {
+//     vTaskDelay(10);
+//     if (xSemaphoreTake(volumedecrease_semaphore, portMAX_DELAY)) {
+//       vTaskDelay(10);
+//       fprintf(stderr, "interrupt detected");
+//       volumeControl(false, false);
+//       // break;
+//       vTaskDelay(10);
+//     }
+//   }
+//   xSemaphoreGive(volumedecrease_semaphore);
+//   vTaskDelay(250);
+// }
 // void gpio_interrupt(void) {
 //   fprintf(stderr, "Interrupt has been received!!"); // prints that interrupt has been detected
 //   gpio__interrupt_dispatcher();                     // locates interrupt pin
