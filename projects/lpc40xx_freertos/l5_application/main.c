@@ -19,23 +19,23 @@
 #include <stdio.h>
 #define VOLUME 0x0B
 
-//button definitions//
+// button definitions//
 ////////////////////////////////////////////////////
-#define play_pause gpio__construct_as_input(2, 2)
+#define play_pause gpio__construct_as_input(0, 1)
 #define volume_up gpio__construct_as_input(2, 8)
 #define volume_down gpio__construct_as_input(2, 7)
 ////////////////////////////////////////////////////
 
-//various global variables and declarations//
+// various global variables and declarations//
 /////////////////////////////////////////////////
 bool pause;
 size_t current_song;
 size_t number_of_songs;
-typedef char songname_t[16]; 
+typedef char songname_t[16];
 typedef char songbyte_t[512];
 /////////////////////////////////////////////////
 
-//task declarations
+// task declarations
 ////////////////////////////////////////////////
 void Play_Pause_Button(void *p);
 void mp3_reader_task(void *p);
@@ -47,17 +47,16 @@ SemaphoreHandle_t Decoder_Mutex;
 xTaskHandle Player;
 ////////////////////////////////////////////////
 
-//volume declaration
+// volume declaration
 ///////////////////////////////////////////
 void volumeControl(bool higher, bool init);
 uint8_t volume_level = 5;
 ////////////////////////////////////////////
 
-//Pull down declaration
+// Pull down declaration
 ///////////////////////////////
 void pull_down_switches(void);
 ///////////////////////////////
-
 
 // flash: python nxp-programmer/flash.py
 
@@ -65,7 +64,7 @@ void main(void) {
   pull_down_switches();
   current_song = 0;
   number_of_songs = song_list__get_item_count();
-  lpc_peripheral__enable_interrupt(LPC_PERIPHERAL__GPIO, gpio__interrupt_dispatcher, NULL); 
+  lpc_peripheral__enable_interrupt(LPC_PERIPHERAL__GPIO, gpio__interrupt_dispatcher, NULL);
   NVIC_EnableIRQ(GPIO_IRQn);
   sj2_cli__init();
   mp3_decoder__initialize();
@@ -86,11 +85,11 @@ void mp3_reader_task(void *p) {
   char bytes_512[512];
   UINT *byte_reader;
   FRESULT file;
-  lcd__initialize(); 
+  lcd__initialize();
   FIL songFile;
   while (true) {
     name = (song_list__get_name_for_item(current_song));
-    println_to_screen(name); //need to replace with funciton
+    println_to_screen(name); // need to replace with funciton
     file = f_open(&songFile, name, FA_READ);
     if (FR_OK == file) {
       while (!f_eof(&songFile)) {
@@ -113,15 +112,15 @@ void mp3_player_task(void *p) {
     xQueueReceive(Q_songdata, &bytes_512[0], portMAX_DELAY);
     for (int i = 0; i < sizeof(bytes_512); i++) {
       uint8_t alternate_status = 1;
-      while (!mp3_decoder__needs_data()) { 
+      while (!mp3_decoder__needs_data()) {
       }
       if (xSemaphoreTake(Decoder_Mutex, portMAX_DELAY)) {
-        spi_send_to_mp3_decoder(bytes_512[i]); 
+        spi_send_to_mp3_decoder(bytes_512[i]);
         xSemaphoreGive(Decoder_Mutex);
       }
     }
   }
-} 
+}
 
 void Play_Pause_Button(void *p) {
   pause = true; // changed to true so that it starts paused
@@ -146,7 +145,6 @@ void Play_Pause_Button(void *p) {
   }
 }
 
-
 void volumeControl(bool higher, bool init) {
 
   if (higher && volume_level < 8 && !init) {
@@ -163,7 +161,8 @@ void volumeControl(bool higher, bool init) {
       MP3_decoder__sci_write(VOLUME, 0x2020);
       break;
     case 6:
-      MP3_decoder__sci_write(VOLUME, 0x2525);;
+      MP3_decoder__sci_write(VOLUME, 0x2525);
+      ;
       break;
     case 5:
       MP3_decoder__sci_write(VOLUME, 0x3030);
