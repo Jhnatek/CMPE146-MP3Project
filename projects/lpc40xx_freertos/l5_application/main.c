@@ -35,12 +35,30 @@ static void initialize_buttons() {
 }
 // flash: python nxp-programmer/flash.py
 
+void center_text_to_screen(char *string) {
+
+  int number_of_first_space = (20 - strlen(string)) / 2;
+  song_memory_t first_whitespace = {0};
+  for (int i = 0; i < number_of_first_space; i++) {
+    strcat(first_whitespace, " ");
+  }
+  song_memory_t display = {0};
+  strcat(display, first_whitespace); // Place first whitespace in front
+  strcat(display, string);           // Concatenate frontwhitespace and string text
+  println_to_screen(display);
+}
+
 void main(void) {
   sj2_cli__init();
   mp3_decoder__initialize();
   MP3_song__init();
   lcd__initialize();
   initialize_buttons();
+  //-----Center text example
+  song_memory_t *string = song_list__get_name_for_item(0); // Get metadata from the 1st song on the list
+  center_text_to_screen(string[1]);
+
+  //---------------------------
   xTaskCreate(mp3_reader_task, "read-task", (4096 / sizeof(void *)), NULL, PRIORITY_HIGH, NULL);
   xTaskCreate(mp3_player_task, "play-task", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   xTaskCreate(screen_control_task, "screen-task", (4096 / sizeof(void *)), NULL, PRIORITY_HIGH, NULL);
@@ -49,6 +67,8 @@ void main(void) {
 
   vTaskStartScheduler();
 }
+
+// NOTE: If two or more task uses LCD driver. Use mutex to ensure ONE task communicate with LCD
 
 // Reader tasks receives song-name over Q_songname to start reading it
 void mp3_reader_task(void *p) {
@@ -62,7 +82,7 @@ void mp3_reader_task(void *p) {
   FIL songFile;
   while (true) {
     name = song_list__get_name_for_item(current_song);
-    println_to_screen(name[0]); // need to replace with funciton
+    // println_to_screen(name[0]); // need to replace with funciton
     if (xQueueReceive(Q_songname, &name, portMAX_DELAY)) {
       file = f_open(&songFile, name, FA_READ);
       fprintf(stderr, "file %d\n", file);
@@ -137,3 +157,4 @@ void screen_control_task(void *p) {
     changed = false;
   }
 }
+
