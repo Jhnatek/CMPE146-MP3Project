@@ -19,7 +19,7 @@
 #include <stdint.h>
 #define VOLUME 0x0B
 #define BASS 0x02
-#define play_pause gpio__construct_as_input(2, 2)
+#define play_pause gpio__construct_as_input(0, 1)
 // save 2.8 and 0.17 for volume up and down
 // the other ports you can use: (note that there are only 8 swtiches, i would evenutlaly like a funciton that will
 // switch between bass, treble, and volume, and then we can adjust those using volume+/-) 2.2, 2.5, 2.7, 2.9 2.4, 2.6,
@@ -76,8 +76,8 @@ void main(void) {
   lpc_peripheral__enable_interrupt(LPC_PERIPHERAL__GPIO, gpio__interrupt_dispatcher, NULL);
   gpio__attach_interrupt(2, 8, GPIO_INTR__FALLING_EDGE, volumeincrease_isr);
   gpio__attach_interrupt(0, 17, GPIO_INTR__FALLING_EDGE, volumedecrease_isr);
-  gpio__attach_interrupt(2, 2, GPIO_INTR__FALLING_EDGE, bassincrease_isr);
-  gpio__attach_interrupt(2, 5, GPIO_INTR__FALLING_EDGE, bassdecrease_isr);
+  gpio__attach_interrupt(0, 30, GPIO_INTR__FALLING_EDGE, bassincrease_isr);
+  gpio__attach_interrupt(0, 29, GPIO_INTR__FALLING_EDGE, bassdecrease_isr);
   gpio__attach_interrupt(2, 7, GPIO_INTR__FALLING_EDGE, trebleincrease_isr);
   gpio__attach_interrupt(2, 9, GPIO_INTR__FALLING_EDGE, trebledecrease_isr);
   // LPC_GPIO0->DIR &= ~(1 << 30);
