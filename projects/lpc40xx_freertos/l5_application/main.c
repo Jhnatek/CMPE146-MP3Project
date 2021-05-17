@@ -57,6 +57,7 @@ void treble_task(void *p);
 QueueHandle_t Q_songdata;
 SemaphoreHandle_t Decoder_Mutex;
 SemaphoreHandle_t State_Mutex;
+SemaphoreHandle_t pause_mutex;
 xTaskHandle Player;
 ////////////////////////////////////////////////
 
@@ -109,6 +110,7 @@ void main(void) {
   xTaskCreate(treble_task, "treble increase", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   Decoder_Mutex = xSemaphoreCreateMutex();
   State_Mutex = xSemaphoreCreateMutex();
+  pause_mutex = xSemaphoreCreateMutex();
   Q_songdata = xQueueCreate(1, 512);
 
   vTaskStartScheduler();
@@ -245,47 +247,34 @@ void treble_function(bool higher) {
   write_to_decoder_function();
 }
 
-
 void bass_task(void *p) {
   while (true) {
-    if (gpio__get(bassdecrease)) {
-      while (gpio__get(bassdecrease)) {
+    if (gpio__get(volume_down) && current_state == PAUSE_BASS) {
+      while (gpio__get(volume_down)) {
       }
       bass_function(false);
-    }
-
-    else if (gpio__get(bassincrease)) {
-      while (gpio__get(bassincrease)) {
+    } else if (gpio__get(volume_up) && current_state == PAUSE_BASS) {
+      while (gpio__get(volume_up)) {
       }
       bass_function(true);
-      // break;
-      vTaskDelay(10);
     }
-    vTaskDelay(10);
+    vTaskDelay(100);
   }
 }
 
 void treble_task(void *p) {
   while (true) {
-    vTaskDelay(10);
-    if (gpio__get(trebledecrease)) {
-      while (gpio__get(trebledecrease)) {
+    if (gpio__get(volume_down) && current_state == PAUSE_TREB) {
+      while (gpio__get(volume_down)) {
       }
-      vTaskDelay(10);
-      fprintf(stderr, "interrupt detected");
       treble_function(false);
-      // break;
-      vTaskDelay(10);
     }
-    if (gpio__get(trebleincrease)) {
-      while (gpio__get(trebleincrease)) {
+    if (gpio__get(volume_up) && current_state == PAUSE_TREB) {
+      while (gpio__get(volume_up)) {
       }
-      vTaskDelay(10);
-      fprintf(stderr, "interrupt detected");
       treble_function(true);
-      // break;
-      vTaskDelay(10);
     }
+    vTaskDelay(100);
   }
 }
 
@@ -360,10 +349,8 @@ void volumeControl(bool higher, bool init) {
 
 void volumeincrease_task(void *p) {
   while (1) {
-    if (gpio__get(volume_up)) {
-      vTaskDelay(10);
+    if (gpio__get(volume_up) && current_state == PAUSE_VOL) {
       volumeControl(true, false);
-      vTaskDelay(10);
     }
     vTaskDelay(100);
   }
@@ -371,10 +358,8 @@ void volumeincrease_task(void *p) {
 
 void volumedecrease_task(void *p) {
   while (true) {
-    if (gpio__get(volume_down)) {
-      vTaskDelay(10);
+    if (gpio__get(volume_down) && current_state == PAUSE_VOL) {
       volumeControl(false, false);
-      vTaskDelay(10);
     }
     vTaskDelay(100);
   }
@@ -424,10 +409,18 @@ void update_menu(void) {
       println_to_screen(buffer);
       break;
     case PAUSE_TREB:
-
+      println_to_screen("                    ");
+      println_to_screen(PAUSED);
+      println_to_screen("                    ");
+      sprintf(buffer, "     Treb = %d       ", treble_level);
+      println_to_screen(buffer);
       break;
     case PAUSE_BASS:
-
+      println_to_screen("                    ");
+      println_to_screen(PAUSED);
+      println_to_screen("                    ");
+      sprintf(buffer, "     Bass = %d       ", treble_level);
+      println_to_screen(buffer);
       break;
     }
     xSemaphoreGive(State_Mutex);
