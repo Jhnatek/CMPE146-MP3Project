@@ -38,6 +38,7 @@ static void initialize_buttons() {
 void main(void) {
   sj2_cli__init();
   mp3_decoder__initialize();
+  MP3_song__init();
   lcd__initialize();
   initialize_buttons();
   xTaskCreate(mp3_reader_task, "read-task", (4096 / sizeof(void *)), NULL, PRIORITY_HIGH, NULL);
