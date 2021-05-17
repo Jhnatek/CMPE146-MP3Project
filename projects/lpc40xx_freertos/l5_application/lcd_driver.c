@@ -65,37 +65,38 @@ void println_to_screen(char *str) {
 
 void print_song_list(size_t song_number, int volume) {
   lcd_clear();
-  char song1[20];
-  char song2[20];
-  char song3[20];
-  int num = song_list__get_item_count();
-  int number_of_songs_left = num - song_number;
-  char buffer[20];
+  //   char song1[20];
+  //   char song2[20];
+  //   char song3[20];
+  //   // int num = song_list__get_item_count();
+  //   //int number_of_songs_left = num - song_number;
+  //   char buffer[20];
 
-  if (number_of_songs_left == 1) {
-    sprintf(song1, "%s", song_list__get_name_for_item(song_number));
-  } else if (number_of_songs_left == 2) {
-    sprintf(song1, "%s", song_list__get_name_for_item(song_number));
-    sprintf(song2, "%s", song_list__get_name_for_item(song_number + 1));
-  } else {
-    sprintf(song1, "%s", song_list__get_name_for_item(song_number));
-    sprintf(song2, "%s", song_list__get_name_for_item(song_number + 1));
-    sprintf(song3, "%s", song_list__get_name_for_item(song_number + 2));
-  }
+  //   //if (number_of_songs_left == 1) {
+  //     // sprintf(song1, "%s", song_list__get_name_for_item(song_number));
+  //   } else if (number_of_songs_left == 2) {
+  //     // sprintf(song1, "%s", song_list__get_name_for_item(song_number));
+  //     // sprintf(song2, "%s", song_list__get_name_for_item(song_number + 1));
+  //   } else {
+  //     // sprintf(song1, "%s", song_list__get_name_for_item(song_number));
+  //     // sprintf(song2, "%s", song_list__get_name_for_item(song_number + 1));
+  //     // sprintf(song3, "%s", song_list__get_name_for_item(song_number + 2));
+  //   }
 
-  sprintf(buffer, "> %s", song1);
-  printlm_to_screen(buffer);
+  //   sprintf(buffer, "> %s", song1);
+  //   printlm_to_screen(buffer);
 
-  if (number_of_songs_left > 1) {
-    sprintf(buffer, "  %s", song2);
-    println_to_screen(buffer);
-  }
+  //   if (number_of_songs_left > 1) {
+  //     sprintf(buffer, "  %s", song2);
+  //     println_to_screen(buffer);
+  //   }
 
-  if (number_of_songs_left > 2) {
-    sprintf(buffer, "  %s", song3);
-    println_to_screen(buffer);
-  }
+  //   if (number_of_songs_left > 2) {
+  //     sprintf(buffer, "  %s", song3);
+  //     // println_to_screen(buffer);
+  //   }
 
-  sprintf(buffer, "V = %d", volume);
-  println_to_screen(buffer);
+  //   sprintf(buffer, "V = %d", volume);
+  //   // println_to_screen(buffer);
+  // }
 }

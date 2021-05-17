@@ -83,15 +83,15 @@ void update_menu(void);
 
 void main(void) {
   pull_down_switches();
-  number_of_songs = song_list__get_item_count();
   lpc_peripheral__enable_interrupt(LPC_PERIPHERAL__GPIO, gpio__interrupt_dispatcher, NULL);
   NVIC_EnableIRQ(GPIO_IRQn);
   sj2_cli__init();
   mp3_decoder__initialize();
-  song_list__populate();
+  MP3_song__init();
   initialize_pwm();
   test_color();
   MP3_decoder__sci_write(VOLUME, 0x3030); // sets volume initially, otherwise starts at max
+  number_of_songs = song_list__get_item_count();
   current_song = 0;
   stay_in_loop = true;
   xTaskCreate(Play_Pause_Button, "Play/Pause", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
@@ -112,7 +112,6 @@ void screen_control_task(void *p) {
   while (1) {
     if (gpio__get(forward_button) && current_song + 1 != song_list__get_item_count()) {
       current_song++;
-      fprintf(stderr, "increase song\n");
       changed = true;
     } else if (gpio__get(rewind_button) && (current_song != 0)) {
       current_song--;
@@ -136,7 +135,7 @@ void mp3_reader_task(void *p) {
   lcd__initialize();
   FIL songFile;
   while (true) {
-    name = (song_list__get_name_for_item(current_song));
+    name = (song_list__get_name_for_item_only(current_song));
     // println_to_screen(name); // need to replace with funciton
     file = f_open(&songFile, name, FA_READ);
     if (FR_OK == file) {
@@ -148,7 +147,6 @@ void mp3_reader_task(void *p) {
       if (stay_in_loop) {
         ++current_song;
       } else {
-        fprintf(stderr, "stay in loop was false\n");
         stay_in_loop = true;
       }
     } else {
@@ -186,6 +184,8 @@ void Play_Pause_Button(void *p) {
     }
     if (gpio__get(play_pause) && previous) {
       pause = false;
+      current_state = MENU1;
+      update_menu();
     }
     if (!gpio__get(play_pause)) {
       previous = pause;
@@ -273,9 +273,20 @@ void pull_down_switches(void) {
 
 void update_menu(void) {
   char buffer[20];
+  char *buffer_pointer1;
+  char *buffer_pointer2;
+  char *buffer_pointer3;
   lcd_clear();
   switch (current_state) {
   case MENU1:
+    buffer_pointer1 = song_list__get_name_for_item(1, current_song);
+    center_text_to_screen(buffer_pointer1);
+    buffer_pointer2 = song_list__get_name_for_item(2, current_song);
+    center_text_to_screen(buffer_pointer2);
+    buffer_pointer3 = song_list__get_name_for_item(3, current_song);
+    center_text_to_screen(buffer_pointer3);
+    // sprintf(buffer, "%s", buffer_pointer);
+    // println_to_screen(buffer);
 
     break;
   case MENU2:
