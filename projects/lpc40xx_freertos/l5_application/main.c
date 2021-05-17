@@ -49,10 +49,8 @@ void volumedecrease_task(void *p);
 void bass_function(bool higher, bool init);
 void treble_function(bool higher, bool init);
 void write_to_decoder_function(void);
-void bassdecrease_task(void *p);
-void bassincrease_task(void *p);
-void trebledecrease_task(void *p);
-void trebleincrease_task(void *p);
+void bass_task(void *p);
+void treble_task(void *p);
 QueueHandle_t Q_songname;
 QueueHandle_t Q_songdata;
 SemaphoreHandle_t Decoder_Mutex;
@@ -93,10 +91,8 @@ void main(void) {
   NVIC_EnableIRQ(GPIO_IRQn);
   sj2_cli__init();
   mp3_decoder__initialize();
-  xTaskCreate(bassincrease_task, "bass increase", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
-  xTaskCreate(bassdecrease_task, "bass decrease", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
-  xTaskCreate(trebleincrease_task, "treble increase", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
-  xTaskCreate(trebledecrease_task, "treble decrease", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
+  xTaskCreate(bass_task, "bass increase", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
+  xTaskCreate(treble_task, "treble increase", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
 
   xTaskCreate(Play_Pause_Button, "Play/Pause", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   // xTaskCreate(Volume_Control, "Volume Control", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
@@ -162,6 +158,7 @@ void Play_Pause_Button(void *p) {
   bool pause = false;
   bool previous = false;
   while (1) {
+    vTaskDelay(10);
     if (gpio__get(play_pause) && !previous) {
       pause = true;
     }
@@ -271,6 +268,7 @@ void volumedecrease_isr(void) { xSemaphoreGiveFromISR(volumedecrease_semaphore, 
 
 void volumeincrease_task(void *p) {
   while (1) {
+    vTaskDelay(10);
     if (xSemaphoreTake(volumeincrease_semaphore, portMAX_DELAY)) {
       vTaskDelay(10);
       fprintf(stderr, "interrupt detected");
@@ -283,6 +281,7 @@ void volumeincrease_task(void *p) {
 
 void volumedecrease_task(void *p) {
   while (true) {
+    vTaskDelay(10);
     if (xSemaphoreTake(volumedecrease_semaphore, portMAX_DELAY)) {
       vTaskDelay(10);
       fprintf(stderr, "interrupt detected");
@@ -339,8 +338,9 @@ void write_to_decoder_function(void) {
 // void trebledecrease_isr(void) { xSemaphoreGiveFromISR(trebledecrease_semaphore, NULL); }
 // void trebleincrease_isr(void) { xSemaphoreGiveFromISR(trebleincrease_semaphore, NULL); }
 
-void bassdecrease_task(void *p) {
+void bass_task(void *p) {
   while (true) {
+    vTaskDelay(10);
     if (gpio__get(bassdecrease)) {
       while (gpio__get(bassdecrease)) {
       }
@@ -350,10 +350,7 @@ void bassdecrease_task(void *p) {
       // break;
       vTaskDelay(10);
     }
-  }
-}
-void bassincrease_task(void *p) {
-  while (true) {
+    vTaskDelay(10);
     if (gpio__get(bassincrease)) {
       while (gpio__get(bassincrease)) {
       }
@@ -365,8 +362,10 @@ void bassincrease_task(void *p) {
     }
   }
 }
-void trebledecrease_task(void *p) {
+
+void treble_task(void *p) {
   while (true) {
+    vTaskDelay(10);
     if (gpio__get(trebledecrease)) {
       while (gpio__get(trebledecrease)) {
       }
@@ -376,10 +375,6 @@ void trebledecrease_task(void *p) {
       // break;
       vTaskDelay(10);
     }
-  }
-}
-void trebleincrease_task(void *p) {
-  while (true) {
     if (gpio__get(trebleincrease)) {
       while (gpio__get(trebleincrease)) {
       }
