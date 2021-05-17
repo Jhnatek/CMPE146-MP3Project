@@ -20,6 +20,10 @@
 #define VOLUME 0x0B
 #define BASS 0x02
 #define play_pause gpio__construct_as_input(2, 2)
+#define bassincrease gpio__construct_as_input(2, 4)
+#define bassdecrease gpio__construct_as_input(2, 5)
+#define trebleincrease gpio__construct_as_input(2, 7)
+#define trebledecrease gpio__construct_as_input(2, 9)
 // save 2.8 and 0.17 for volume up and down
 // the other ports you can use: (note that there are only 8 swtiches, i would evenutlaly like a funciton that will
 // switch between bass, treble, and volume, and then we can adjust those using volume+/-) 2.2, 2.5, 2.7, 2.9 2.4, 2.6,
@@ -37,10 +41,10 @@ void mp3_player_task(void *p);
 void volumeControl(bool higher, bool init);
 void volumeincrease_task(void *p);
 void volumedecrease_task(void *p);
-void bassdecrease_isr(void);
-void bassincrease_isr(void);
-void trebledecrease_isr(void);
-void trebleincrease_isr(void);
+// void bassdecrease_isr(void);
+// void bassincrease_isr(void);
+// void trebledecrease_isr(void);
+// void trebleincrease_isr(void);
 void bass_function(bool higher, bool init);
 void treble_function(bool higher, bool init);
 void write_to_decoder_function(void);
@@ -53,10 +57,10 @@ QueueHandle_t Q_songdata;
 SemaphoreHandle_t Decoder_Mutex;
 SemaphoreHandle_t volumeincrease_semaphore;
 SemaphoreHandle_t volumedecrease_semaphore;
-SemaphoreHandle_t bassdecrease_semaphore;
-SemaphoreHandle_t bassincrease_semaphore;
-SemaphoreHandle_t trebledecrease_semaphore;
-SemaphoreHandle_t trebleincrease_semaphore;
+// SemaphoreHandle_t bassdecrease_semaphore;
+// SemaphoreHandle_t bassincrease_semaphore;
+// SemaphoreHandle_t trebledecrease_semaphore;
+// SemaphoreHandle_t trebleincrease_semaphore;
 
 uint8_t volume_level = 5;
 uint8_t bass_level = 0;
@@ -69,17 +73,17 @@ void main(void) {
   pull_down_switches();
   volumedecrease_semaphore = xSemaphoreCreateBinary();
   volumeincrease_semaphore = xSemaphoreCreateBinary();
-  bassincrease_semaphore = xSemaphoreCreateBinary();
-  bassdecrease_semaphore = xSemaphoreCreateBinary();
-  trebleincrease_semaphore = xSemaphoreCreateBinary();
-  trebledecrease_semaphore = xSemaphoreCreateBinary();
+  // bassincrease_semaphore = xSemaphoreCreateBinary();
+  // bassdecrease_semaphor+e = xSemaphoreCreateBinary();
+  // trebleincrease_semaphore = xSemaphoreCreateBinary();
+  // trebledecrease_semaphore = xSemaphoreCreateBinary();
   lpc_peripheral__enable_interrupt(LPC_PERIPHERAL__GPIO, gpio__interrupt_dispatcher, NULL);
   gpio__attach_interrupt(2, 8, GPIO_INTR__FALLING_EDGE, volumeincrease_isr);
   gpio__attach_interrupt(0, 17, GPIO_INTR__FALLING_EDGE, volumedecrease_isr);
-  gpio__attach_interrupt(2, 2, GPIO_INTR__FALLING_EDGE, bassincrease_isr);
-  gpio__attach_interrupt(2, 5, GPIO_INTR__FALLING_EDGE, bassdecrease_isr);
-  gpio__attach_interrupt(2, 7, GPIO_INTR__FALLING_EDGE, trebleincrease_isr);
-  gpio__attach_interrupt(2, 9, GPIO_INTR__FALLING_EDGE, trebledecrease_isr);
+  // gpio__attach_interrupt(2, 2, GPIO_INTR__FALLING_EDGE, bassincrease_isr);
+  // gpio__attach_interrupt(2, 5, GPIO_INTR__FALLING_EDGE, bassdecrease_isr);
+  // gpio__attach_interrupt(2, 7, GPIO_INTR__FALLING_EDGE, trebleincrease_isr);
+  // gpio__attach_interrupt(2, 9, GPIO_INTR__FALLING_EDGE, trebledecrease_isr);
   // LPC_GPIO0->DIR &= ~(1 << 30);
   NVIC_EnableIRQ(GPIO_IRQn);
   sj2_cli__init();
@@ -325,14 +329,16 @@ void write_to_decoder_function(void) {
   }
 }
 
-void bassdecrease_isr(void) { xSemaphoreGiveFromISR(bassdecrease_semaphore, NULL); }
-void bassincrease_isr(void) { xSemaphoreGiveFromISR(bassincrease_semaphore, NULL); }
-void trebledecrease_isr(void) { xSemaphoreGiveFromISR(trebledecrease_semaphore, NULL); }
-void trebleincrease_isr(void) { xSemaphoreGiveFromISR(trebleincrease_semaphore, NULL); }
+// void bassdecrease_isr(void) { xSemaphoreGiveFromISR(bassdecrease_semaphore, NULL); }
+// void bassincrease_isr(void) { xSemaphoreGiveFromISR(bassincrease_semaphore, NULL); }
+// void trebledecrease_isr(void) { xSemaphoreGiveFromISR(trebledecrease_semaphore, NULL); }
+// void trebleincrease_isr(void) { xSemaphoreGiveFromISR(trebleincrease_semaphore, NULL); }
 
 void bassdecrease_task(void *p) {
   while (true) {
-    if (xSemaphoreTake(bassdecrease_semaphore, portMAX_DELAY)) {
+    if (gpio__get(bassdecrease)) {
+      while (gpio__get(bassdecrease)) {
+      }
       vTaskDelay(10);
       fprintf(stderr, "interrupt detected");
       bass_function(false, false);
@@ -340,11 +346,12 @@ void bassdecrease_task(void *p) {
       vTaskDelay(10);
     }
   }
-  xSemaphoreGive(bassdecrease_semaphore);
 }
 void bassincrease_task(void *p) {
   while (true) {
-    if (xSemaphoreTake(bassincrease_semaphore, portMAX_DELAY)) {
+    if (gpio__get(bassincrease)) {
+      while (gpio__get(bassincrease)) {
+      }
       vTaskDelay(10);
       fprintf(stderr, "interrupt detected");
       bass_function(true, false);
@@ -352,11 +359,12 @@ void bassincrease_task(void *p) {
       vTaskDelay(10);
     }
   }
-  xSemaphoreGive(bassincrease_semaphore);
 }
 void trebledecrease_task(void *p) {
   while (true) {
-    if (xSemaphoreTake(trebledecrease_semaphore, portMAX_DELAY)) {
+    if (gpio__get(trebledecrease)) {
+      while (gpio__get(trebledecrease)) {
+      }
       vTaskDelay(10);
       fprintf(stderr, "interrupt detected");
       treble_function(false, false);
@@ -364,11 +372,12 @@ void trebledecrease_task(void *p) {
       vTaskDelay(10);
     }
   }
-  xSemaphoreGive(trebledecrease_semaphore);
 }
 void trebleincrease_task(void *p) {
   while (true) {
-    if (xSemaphoreTake(trebleincrease_semaphore, portMAX_DELAY)) {
+    if (gpio__get(trebleincrease)) {
+      while (gpio__get(trebleincrease)) {
+      }
       vTaskDelay(10);
       fprintf(stderr, "interrupt detected");
       treble_function(true, false);
@@ -376,5 +385,4 @@ void trebleincrease_task(void *p) {
       vTaskDelay(10);
     }
   }
-  xSemaphoreGive(trebleincrease_semaphore);
 }
