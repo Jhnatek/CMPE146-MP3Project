@@ -72,33 +72,31 @@ void main(void) {
 
 // Reader tasks receives song-name over Q_songname to start reading it
 void mp3_reader_task(void *p) {
-  song_memory_t *name;
-  ;
+  songname_t *name;
   char bytes_512[512];
   UINT *byte_reader;
   FRESULT file;
-  lcd__initialize();
-  const char *song_pointer = name; // maybe delete
+  char current_song[32];
+  lcd__initialize(); // wont work right in main. need to make print statments after reader_task
   FIL songFile;
   while (true) {
-    name = song_list__get_name_for_item(current_song);
-    // println_to_screen(name[0]); // need to replace with funciton
-    if (xQueueReceive(Q_songname, &name, portMAX_DELAY)) {
-      file = f_open(&songFile, name, FA_READ);
-      fprintf(stderr, "file %d\n", file);
-      if (FR_OK == file) {
-        while (!f_eof(&songFile)) {
-          f_read(&songFile, bytes_512, 512, &byte_reader);
-          fprintf(stderr, "reading file \n");
-          xQueueSend(Q_songdata, &bytes_512, portMAX_DELAY);
-        }
-        f_close(&songFile);
-      } else {
-        fprintf(stderr, "Failed to open file \n");
+    // if (xQueueReceive(Q_songname, &name, portMAX_DELAY)) {
+    name = (song_list__get_name_for_item(current_song));
+    println_to_screen(name); // eventually get rid of
+    file = f_open(&songFile, name, FA_READ);
+    if (FR_OK == file) {
+      while (!f_eof(&songFile)) {
+        f_read(&songFile, bytes_512, 512, &byte_reader);
+        xQueueSend(Q_songdata, &bytes_512, portMAX_DELAY);
       }
+      f_close(&songFile);
+    } else {
+      fprintf(stderr, "Failed to open file \n");
     }
+    //}
   }
 }
+
 
 // Player task receives song data over Q_songdata to send it to the MP3 decoder
 void mp3_player_task(void *p) {
