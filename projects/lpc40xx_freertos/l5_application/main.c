@@ -19,6 +19,7 @@
 #include <stdint.h>
 #define VOLUME 0x0B
 #define BASS 0x02
+
 #define play_pause gpio__construct_as_input(2, 2)
 #define bassincrease gpio__construct_as_input(2, 4)
 #define bassdecrease gpio__construct_as_input(2, 5)
@@ -82,6 +83,10 @@ void main(void) {
   gpio__attach_interrupt(0, 17, GPIO_INTR__FALLING_EDGE, volumedecrease_isr);
   // gpio__attach_interrupt(2, 2, GPIO_INTR__FALLING_EDGE, bassincrease_isr);
   // gpio__attach_interrupt(2, 5, GPIO_INTR__FALLING_EDGE, bassdecrease_isr);
+  // gpio__attach_interrupt(2, 7, GPIO_INTR__FALLING_EDGE, trebleincrease_isr);
+  // gpio__attach_interrupt(2, 9, GPIO_INTR__FALLING_EDGE, trebledecrease_isr);
+  // gpio__attach_interrupt(0, 30, GPIO_INTR__FALLING_EDGE, bassincrease_isr);
+  // gpio__attach_interrupt(0, 29, GPIO_INTR__FALLING_EDGE, bassdecrease_isr);
   // gpio__attach_interrupt(2, 7, GPIO_INTR__FALLING_EDGE, trebleincrease_isr);
   // gpio__attach_interrupt(2, 9, GPIO_INTR__FALLING_EDGE, trebledecrease_isr);
   // LPC_GPIO0->DIR &= ~(1 << 30);
