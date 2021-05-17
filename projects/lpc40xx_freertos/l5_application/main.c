@@ -314,33 +314,58 @@ void volumeControl(bool higher, bool init) {
   }
   if (xSemaphoreTake(Decoder_Mutex, portMAX_DELAY)) {
     switch (volume_level) {
-    case 8:
+    case 16:
+      MP3_decoder__sci_write(VOLUME, 0x0000);
+    case 15:
       MP3_decoder__sci_write(VOLUME, 0x1010);
       break;
-    case 7:
+    case 14:
       MP3_decoder__sci_write(VOLUME, 0x2020);
       break;
+    case 13:
+      MP3_decoder__sci_write(VOLUME, 0x3030);
+      break;
+    case 12:
+      MP3_decoder__sci_write(VOLUME, 0x4040);
+      break;
+    case 11:
+      MP3_decoder__sci_write(VOLUME, 0x5050);
+      break;
+    case 10:
+      MP3_decoder__sci_write(VOLUME, 0x6060);
+      break;
+    case 9:
+      MP3_decoder__sci_write(VOLUME, 0x7070);
+      break;
+    case 8:
+      MP3_decoder__sci_write(VOLUME, 0x8080);
+      break;
+    case 7:
+      MP3_decoder__sci_write(VOLUME, 0x9090);
+      break;
     case 6:
-      MP3_decoder__sci_write(VOLUME, 0x2525);
-      ;
+      MP3_decoder__sci_write(VOLUME, 0xA0A0);
       break;
     case 5:
-      MP3_decoder__sci_write(VOLUME, 0x3030);
+      MP3_decoder__sci_write(VOLUME, 0xB0B0);
       break;
     case 4:
-      MP3_decoder__sci_write(VOLUME, 0x3535);
+      MP3_decoder__sci_write(VOLUME, 0xC0C0);
       break;
     case 3:
-      MP3_decoder__sci_write(VOLUME, 0x3030);
+      MP3_decoder__sci_write(VOLUME, 0xD0D0);
       break;
     case 2:
-      MP3_decoder__sci_write(VOLUME, 0x4545);
+      MP3_decoder__sci_write(VOLUME, 0xE0E0);
       break;
     case 1:
+      MP3_decoder__sci_write(VOLUME, 0xF0F0);
+      break;
+    case 0:
       MP3_decoder__sci_write(VOLUME, 0xFEFE);
       break;
     default:
-      MP3_decoder__sci_write(VOLUME, 0x3535);
+      MP3_decoder__sci_write(VOLUME, 0x5050);
     }
     update_menu();
     xSemaphoreGive(Decoder_Mutex);
@@ -349,7 +374,7 @@ void volumeControl(bool higher, bool init) {
 
 void volumeincrease_task(void *p) {
   while (1) {
-    if (gpio__get(volume_up) && current_state == PAUSE_VOL) {
+    if (gpio__get(volume_up) && current_state != PAUSE_TREB && current_state != PAUSE_BASS) {
       volumeControl(true, false);
     }
     vTaskDelay(100);
@@ -358,7 +383,7 @@ void volumeincrease_task(void *p) {
 
 void volumedecrease_task(void *p) {
   while (true) {
-    if (gpio__get(volume_down) && current_state == PAUSE_VOL) {
+    if (gpio__get(volume_down) && current_state != PAUSE_TREB && current_state != PAUSE_BASS) {
       volumeControl(false, false);
     }
     vTaskDelay(100);
