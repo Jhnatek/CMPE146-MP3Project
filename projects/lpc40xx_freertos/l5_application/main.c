@@ -73,7 +73,7 @@ void main(void) {
   volumedecrease_semaphore = xSemaphoreCreateBinary();
   volumeincrease_semaphore = xSemaphoreCreateBinary();
   // bassincrease_semaphore = xSemaphoreCreateBinary();
-  // bassdecrease_semaphor+e = xSemaphoreCreateBinary();
+  // bassdecrease_semaphore = xSemaphoreCreateBinary();
   // trebleincrease_semaphore = xSemaphoreCreateBinary();
   // trebledecrease_semaphore = xSemaphoreCreateBinary();
   lpc_peripheral__enable_interrupt(LPC_PERIPHERAL__GPIO, gpio__interrupt_dispatcher, NULL);
@@ -91,8 +91,8 @@ void main(void) {
   NVIC_EnableIRQ(GPIO_IRQn);
   sj2_cli__init();
   mp3_decoder__initialize();
-  xTaskCreate(bass_task, "bass increase", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
-  xTaskCreate(treble_task, "treble increase", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
+  xTaskCreate(bass_task, "bass task", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
+  xTaskCreate(treble_task, "treble task", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
 
   xTaskCreate(Play_Pause_Button, "Play/Pause", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
   // xTaskCreate(Volume_Control, "Volume Control", (4096 / sizeof(void *)), NULL, PRIORITY_MEDIUM, NULL);
