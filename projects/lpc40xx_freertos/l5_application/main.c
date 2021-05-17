@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #define VOLUME 0x0B
+#define BASS 0x02
 
 // button definitions//
 ////////////////////////////////////////////////////
