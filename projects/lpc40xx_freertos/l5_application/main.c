@@ -34,7 +34,6 @@ void volumedecrease_isr(void);
 void volumeincrease_isr(void);
 void mp3_reader_task(void *p);
 void mp3_player_task(void *p);
-void bass_function (void);
 void volumeControl(bool higher, bool init);
 void volumeincrease_task(void *p);
 void volumedecrease_task(void *p);
@@ -42,9 +41,9 @@ void bassdecrease_isr(void);
 void bassincrease_isr(void);
 void trebledecrease_isr(void);
 void trebleincrease_isr(void);
-void bass_function (bool higher, bool init);
-void treble_function (bool higher, bool init);
-void write_to_decoder_function (void);
+void bass_function(bool higher, bool init);
+void treble_function(bool higher, bool init);
+void write_to_decoder_function(void);
 void bassdecrease_task(void *p);
 void bassincrease_task(void *p);
 void trebledecrease_task(void *p);
@@ -297,7 +296,7 @@ void pull_down_switches(void) {
   gpio__enable_pull_down_resistors(play_pause); // Josh needs this because the buttons are active high
 }
 
-void bass_function (bool higher, bool init){
+void bass_function(bool higher, bool init) {
   fprintf(stderr, "GOT INTO BASS FUNCTION\n");
   if (higher && bass_level < 5 && !init) {
     bass_level++;
@@ -307,8 +306,8 @@ void bass_function (bool higher, bool init){
   write_to_decoder_function();
 }
 
-void treble_function (bool higher, bool init){
-  fprintf(stderr, "GOT INTO BASS FUNCTION\n");
+void treble_function(bool higher, bool init) {
+  fprintf(stderr, "GOT INTO TREBLE FUNCTION\n");
   if (higher && treble_level < 7 && !init) {
     treble_level++;
   } else if (!higher && treble_level > -8 && !init) {
@@ -317,12 +316,13 @@ void treble_function (bool higher, bool init){
   write_to_decoder_function();
 }
 
-void write_to_decoder_function (void) {
-   if (xSemaphoreTake(Decoder_Mutex, portMAX_DELAY)) {
-  bass_treble = ((treble_level << 12) & 0xF000) + 0x0F00 + (((bass_level*3) << 4) & 0x00F0) + 0x000F);
-  MP3_decoder__sci_write(BASS, bass_treble);
-  xSemaphoreGive(Decoder_Mutex);
-   }
+void write_to_decoder_function(void) {
+  if (xSemaphoreTake(Decoder_Mutex, portMAX_DELAY)) {
+    uint16_t bass_treble;
+    bass_treble = (((treble_level << 12) & 0xF000) + 0x0F00 + (((bass_level * 3) << 4) & 0x00F0) + 0x000F);
+    MP3_decoder__sci_write(BASS, bass_treble);
+    xSemaphoreGive(Decoder_Mutex);
+  }
 }
 
 void bassdecrease_isr(void) { xSemaphoreGiveFromISR(bassdecrease_semaphore, NULL); }
@@ -330,13 +330,12 @@ void bassincrease_isr(void) { xSemaphoreGiveFromISR(bassincrease_semaphore, NULL
 void trebledecrease_isr(void) { xSemaphoreGiveFromISR(trebledecrease_semaphore, NULL); }
 void trebleincrease_isr(void) { xSemaphoreGiveFromISR(trebleincrease_semaphore, NULL); }
 
-
 void bassdecrease_task(void *p) {
   while (true) {
     if (xSemaphoreTake(bassdecrease_semaphore, portMAX_DELAY)) {
       vTaskDelay(10);
       fprintf(stderr, "interrupt detected");
-      volumeControl(false, false);
+      bass_function(false, false);
       // break;
       vTaskDelay(10);
     }
@@ -348,7 +347,7 @@ void bassincrease_task(void *p) {
     if (xSemaphoreTake(bassincrease_semaphore, portMAX_DELAY)) {
       vTaskDelay(10);
       fprintf(stderr, "interrupt detected");
-      volumeControl(false, false);
+      bass_function(true, false);
       // break;
       vTaskDelay(10);
     }
@@ -357,10 +356,10 @@ void bassincrease_task(void *p) {
 }
 void trebledecrease_task(void *p) {
   while (true) {
-    if (xSemaphoreTake(trebledecrease_semaphore portMAX_DELAY)) {
+    if (xSemaphoreTake(trebledecrease_semaphore, portMAX_DELAY)) {
       vTaskDelay(10);
       fprintf(stderr, "interrupt detected");
-      volumeControl(false, false);
+      treble_function(false, false);
       // break;
       vTaskDelay(10);
     }
@@ -372,7 +371,7 @@ void trebleincrease_task(void *p) {
     if (xSemaphoreTake(trebleincrease_semaphore, portMAX_DELAY)) {
       vTaskDelay(10);
       fprintf(stderr, "interrupt detected");
-      volumeControl(false, false);
+      treble_function(true, false);
       // break;
       vTaskDelay(10);
     }
