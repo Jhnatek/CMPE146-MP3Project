@@ -42,7 +42,7 @@ void MP3_song__init(void) {
   FIL songs_file;
   number_of_songs = 0;
   // Open song_list file
-  if ((f_open(&songs_file, "file.txt", FA_OPEN_EXISTING | FA_READ) == FR_OK)) {
+  if ((f_open(&songs_file, "song_list.txt", FA_OPEN_EXISTING | FA_READ) == FR_OK)) {
     while (!f_eof(&songs_file)) {
 
       song_memory_t song_data_string = {0};
