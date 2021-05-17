@@ -99,11 +99,58 @@ void song_list__populate(void) {
 
 size_t song_list__get_item_count(void) { return number_of_songs; }
 
-const song_memory_t *song_list__get_name_for_item(size_t item_number) {
+song_memory_t *song_list__get_name_for_item(size_t item_number) {
   song_memory_t *return_pointer = NULL;
 
   if (item_number < number_of_songs) {
     return_pointer = list_of_songs[item_number];
   }
   return return_pointer;
+}
+
+char *return_specific_information(song_data desire) {
+  char buffer[20] = "";
+  int number_of_first_space;
+  char *string;
+  char *buffer_pointer = &buffer;
+  int track;
+  switch (desire) {
+  case SONG_TITLE:
+    string = list_of_songs[1];
+    number_of_first_space = (20 - strlen(string)) / 2;
+    track = strlen(string);
+    break;
+  case SONG_ARTIST:
+    string = list_of_songs[2];
+    number_of_first_space = (20 - strlen(string)) / 2;
+    track = strlen(string);
+    break;
+  case SONG_ALBUM:
+    string = list_of_songs[3];
+    number_of_first_space = (20 - strlen(string)) / 2;
+    track = strlen(string);
+    break;
+  case SONG_YEAR:
+    string = list_of_songs[4];
+    number_of_first_space = (20 - strlen(string)) / 2;
+    track = strlen(string);
+    break;
+  case SONG_GENRE:
+    string = list_of_songs[5];
+    number_of_first_space = (20 - strlen(string)) / 2;
+    track = strlen(string);
+    break;
+  }
+  for (int i = 0; i < number_of_first_space; i++) {
+    sprintf(buffer, " ");
+    track++;
+  }
+  // song_memory_t display = {0};
+  // strcat(buffer, first_whitespace); // Place first whitespace in front
+  sprintf(buffer, "%s", string);
+  // strcat(buffer, string);           // Concatenate frontwhitespace and string text
+  while (track <= 20) {
+    sprintf(buffer, " ");
+  }
+  return buffer_pointer;
 }

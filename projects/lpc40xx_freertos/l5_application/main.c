@@ -35,19 +35,6 @@ static void initialize_buttons() {
 }
 // flash: python nxp-programmer/flash.py
 
-void center_text_to_screen(char *string) {
-
-  int number_of_first_space = (20 - strlen(string)) / 2;
-  song_memory_t first_whitespace = {0};
-  for (int i = 0; i < number_of_first_space; i++) {
-    strcat(first_whitespace, " ");
-  }
-  song_memory_t display = {0};
-  strcat(display, first_whitespace); // Place first whitespace in front
-  strcat(display, string);           // Concatenate frontwhitespace and string text
-  println_to_screen(display);
-}
-
 void main(void) {
   sj2_cli__init();
   mp3_decoder__initialize();
@@ -55,8 +42,8 @@ void main(void) {
   lcd__initialize();
   initialize_buttons();
   //-----Center text example
-  song_memory_t *string = song_list__get_name_for_item(0); // Get metadata from the 1st song on the list
-  center_text_to_screen(string[1]);
+  char *temp = return_specific_information(SONG_TITLE);
+  println_to_screen(temp);
 
   //---------------------------
   xTaskCreate(mp3_reader_task, "read-task", (4096 / sizeof(void *)), NULL, PRIORITY_HIGH, NULL);
@@ -157,4 +144,3 @@ void screen_control_task(void *p) {
     changed = false;
   }
 }
-
