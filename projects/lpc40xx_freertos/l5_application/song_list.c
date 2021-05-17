@@ -97,21 +97,19 @@ void song_list__populate(void) {
 }*/
 
 void center_text_to_screen(char *string) {
-  int count = 0;
   int number_of_first_space = (20 - strlen(string)) / 2;
   song_memory_t first_whitespace = {0};
   for (int i = 0; i < number_of_first_space; i++) {
     strcat(first_whitespace, " ");
-    count++;
   }
-  count = count + strlen(string);
   song_memory_t display = {0};
   strcat(display, first_whitespace); // Place first whitespace in front
   strcat(display, string);           // Concatenate frontwhitespace and string text
                                      // while (count < 19) {
-  //  strcat(display, " ");
-  // }
   strcat(display, first_whitespace);
+  if (strlen(string) % 2 != 0) {
+    strcat(display, " ");
+  }
   println_to_screen(display);
 }
 

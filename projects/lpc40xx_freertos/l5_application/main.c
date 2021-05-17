@@ -134,6 +134,9 @@ void mp3_reader_task(void *p) {
   FRESULT file;
   lcd__initialize();
   FIL songFile;
+  println_to_screen("       WELCOME      ");
+  println_to_screen("                    ");
+  println_to_screen(" Press Play to Start");
   while (true) {
     name = (song_list__get_name_for_item_only(current_song));
     // println_to_screen(name); // need to replace with funciton
@@ -146,8 +149,12 @@ void mp3_reader_task(void *p) {
       f_close(&songFile);
       if (stay_in_loop) {
         ++current_song;
+        current_state = MENU1;
+        update_menu();
       } else {
         stay_in_loop = true;
+        current_state = MENU1;
+        update_menu();
       }
     } else {
       fprintf(stderr, "Failed to open file \n");
@@ -285,9 +292,8 @@ void update_menu(void) {
     center_text_to_screen(buffer_pointer2);
     buffer_pointer3 = song_list__get_name_for_item(3, current_song);
     center_text_to_screen(buffer_pointer3);
-    // sprintf(buffer, "%s", buffer_pointer);
-    // println_to_screen(buffer);
-
+    sprintf(buffer, "      Vol = %d       ", volume_level);
+    println_to_screen(buffer);
     break;
   case MENU2:
 
