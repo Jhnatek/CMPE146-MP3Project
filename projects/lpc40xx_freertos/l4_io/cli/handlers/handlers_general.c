@@ -90,17 +90,17 @@ static void cli__task_list_print(sl_string_t output_string, app_cli__print_strin
 ///               MP3 HANDLERS              ///
 ///////////////////////////////////////////////
 
-extern QueueHandle_t Q_songname;
+// extern QueueHandle_t Q_songname;
 
-app_cli_status_e cli__mp3_play(app_cli__argument_t argument, sl_string_t user_input_minus_command_name,
-                               app_cli__print_string_function cli_output) {
-  // user_input_minus_command_name is actually a 'char *' pointer type
-  // We tell the Queue to copy 32 bytes of songname from this location
-  if (xQueueSend(Q_songname, user_input_minus_command_name, portMAX_DELAY)) {
-    printf("Sent %s over to the Q_songname\n", user_input_minus_command_name);
-  } else {
-    printf("Failed to send %s over to the Q_songname\n", user_input_minus_command_name);
-  }
+// app_cli_status_e cli__mp3_play(app_cli__argument_t argument, sl_string_t user_input_minus_command_name,
+//                                app_cli__print_string_function cli_output) {
+//   // user_input_minus_command_name is actually a 'char *' pointer type
+//   // We tell the Queue to copy 32 bytes of songname from this location
+//   if (xQueueSend(Q_songname, user_input_minus_command_name, portMAX_DELAY)) {
+//     printf("Sent %s over to the Q_songname\n", user_input_minus_command_name);
+//   } else {
+//     printf("Failed to send %s over to the Q_songname\n", user_input_minus_command_name);
+//   }
 
-  return APP_CLI_STATUS__SUCCESS;
-}
+//   return APP_CLI_STATUS__SUCCESS;
+// }
