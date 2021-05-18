@@ -87,10 +87,10 @@ void update_menu(void);
 // flash: python nxp-programmer/flash.py
 
 void main(void) {
+  sj2_cli__init();
   pull_down_switches();
   lpc_peripheral__enable_interrupt(LPC_PERIPHERAL__GPIO, gpio__interrupt_dispatcher, NULL);
   NVIC_EnableIRQ(GPIO_IRQn);
-  sj2_cli__init();
   mp3_decoder__initialize();
   MP3_song__init();
   initialize_pwm();
