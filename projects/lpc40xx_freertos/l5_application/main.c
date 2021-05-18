@@ -232,8 +232,10 @@ void bass_function(bool higher) {
   if (higher && bass_level < 5) {
 
     bass_level++;
+    update_menu();
   } else if (!higher && bass_level > 1) {
     bass_level--;
+    update_menu();
   }
   write_to_decoder_function();
 }
@@ -241,21 +243,19 @@ void bass_function(bool higher) {
 void treble_function(bool higher) {
   if (higher && treble_level < 7) {
     treble_level++;
+    update_menu();
   } else if (!higher && treble_level > -8) {
     treble_level--;
+    update_menu();
   }
   write_to_decoder_function();
 }
 
 void bass_task(void *p) {
   while (true) {
-    if (gpio__get(volume_down) && current_state == PAUSE_BASS) {
-      while (gpio__get(volume_down)) {
-      }
+    if (gpio__get(volume_down) && current_state != PAUSE_VOL && current_state != PAUSE_TREB) {
       bass_function(false);
-    } else if (gpio__get(volume_up) && current_state == PAUSE_BASS) {
-      while (gpio__get(volume_up)) {
-      }
+    } else if (gpio__get(volume_up) && current_state != PAUSE_VOL && current_state != PAUSE_TREB) {
       bass_function(true);
     }
     vTaskDelay(100);
@@ -264,14 +264,10 @@ void bass_task(void *p) {
 
 void treble_task(void *p) {
   while (true) {
-    if (gpio__get(volume_down) && current_state == PAUSE_TREB) {
-      while (gpio__get(volume_down)) {
-      }
+    if (gpio__get(volume_down) && current_state != PAUSE_VOL && current_state != PAUSE_BASS) {
       treble_function(false);
     }
-    if (gpio__get(volume_up) && current_state == PAUSE_TREB) {
-      while (gpio__get(volume_up)) {
-      }
+    if (gpio__get(volume_up) && current_state != PAUSE_VOL && current_state != PAUSE_BASS) {
       treble_function(true);
     }
     vTaskDelay(100);
@@ -408,6 +404,7 @@ void update_menu(void) {
   if (xSemaphoreTake(State_Mutex, 0)) {
     switch (current_state) {
     case MENU1:
+      lcd_clear();
       buffer_pointer1 = song_list__get_name_for_item(1, current_song);
       center_text_to_screen(buffer_pointer1);
       buffer_pointer2 = song_list__get_name_for_item(2, current_song);
@@ -418,6 +415,11 @@ void update_menu(void) {
       println_to_screen(buffer);
       break;
     case MENU2:
+      println_to_screen("                    ");
+      println_to_screen("                    ");
+      println_to_screen("                    ");
+      println_to_screen("                    ");
+      lcd_clear();
       buffer_pointer1 = song_list__get_name_for_item(4, current_song);
       center_text_to_screen(buffer_pointer1);
       buffer_pointer2 = song_list__get_name_for_item(5, current_song);
@@ -427,6 +429,7 @@ void update_menu(void) {
       println_to_screen(buffer);
       break;
     case PAUSE_VOL:
+      lcd_clear();
       println_to_screen("                    ");
       println_to_screen(PAUSED);
       println_to_screen("                    ");
@@ -434,6 +437,7 @@ void update_menu(void) {
       println_to_screen(buffer);
       break;
     case PAUSE_TREB:
+      lcd_clear();
       println_to_screen("                    ");
       println_to_screen(PAUSED);
       println_to_screen("                    ");
@@ -441,6 +445,7 @@ void update_menu(void) {
       println_to_screen(buffer);
       break;
     case PAUSE_BASS:
+      lcd_clear();
       println_to_screen("                    ");
       println_to_screen(PAUSED);
       println_to_screen("                    ");
